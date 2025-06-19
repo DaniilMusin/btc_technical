@@ -15,7 +15,8 @@ docker compose up --build -d
 
 При `USE_TESTNET=true` ордера не отправляются на биржу. Чтобы дополнительно
 сохранять свечи в архив `data/ohlc_archive.csv`, выставьте `ARCHIVE_CSV=true` в
-`.env`.
+`.env`. Архив очищается автоматически, храня данные лишь за последние три
+месяца (переменная `HISTORY_MONTHS` в `.env`).
 
 ## Tested with Python 3.11 / 3.10
 
