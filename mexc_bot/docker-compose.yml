@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  mexc-bot:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data       # trades.db и логи сохраняем на хосте
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
