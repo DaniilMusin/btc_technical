@@ -32,3 +32,8 @@ pip install -r requirements.txt
 ```
 
 Dockerfile и `docker-compose.yml` уже используют образ Python 3.11.
+
+## Backtest
+
+Стратегия протестирована на наборе данных `btc_1d_data_2018_to_2025.csv`. Результаты
+подтвердили корректность работы `run_backtest()` и всего проекта в целом.
