@@ -9,6 +9,7 @@ warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)  # 
 import logging
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from telegram_utils import tg_send
 
 # Магические числа
 COMMISSION_RATE = 0.0008  # 0.08% round-trip
@@ -148,6 +149,26 @@ class BalancedAdaptiveStrategy:
         self.max_price_seen = 0
         self.min_price_seen = float('inf')
         self.current_side = None
+
+    def _notify_trade_open(self, trade: dict) -> None:
+        msg = (
+            f"\U0001F680 *Открыта {trade['position']}*\n"
+            f"Цена входа: `{trade['entry_price']:.2f}`\n"
+            f"Размер: `{trade['position_size']:.3f}`\n"
+            f"SL: `{trade['stop_loss']:.2f}`  TP: `{trade['take_profit']:.2f}`\n"
+            f"Вес сигнала: `{trade['weight']:.2f}`  Режим: `{trade['market_regime']}`"
+        )
+        tg_send(msg)
+
+    def _notify_trade_close(self, trade: dict) -> None:
+        pnl = trade['pnl']
+        emoji = '✅' if pnl > 0 else '❌'
+        msg = (
+            f"{emoji} *Закрыта {trade['position']}*\n"
+            f"Выход: `{trade['exit_price']:.2f}`  PnL: `{pnl:.2f}`\n"
+            f"Причина: {trade['reason']}"
+        )
+        tg_send(msg)
     
     def load_data(self) -> Optional[pd.DataFrame]:
         """
@@ -1534,6 +1555,7 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
+                        self._notify_trade_close(self.trade_history[-1])
                         
                         position = 0
                         entry_price = 0.0
@@ -1558,6 +1580,7 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
+                        self._notify_trade_close(self.trade_history[-1])
                         
                         position = 0
                         entry_price = 0.0
@@ -1648,6 +1671,7 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
+                        self._notify_trade_close(self.trade_history[-1])
                         
                         position = 0
                         entry_price = 0.0
@@ -1682,7 +1706,8 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
-                        
+                        self._notify_trade_close(self.trade_history[-1])
+
                         position = 0
                         entry_price = 0.0
                         position_size = 0.0
@@ -1706,7 +1731,7 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
-                        
+                        self._notify_trade_close(self.trade_history[-1])
                         position = 0
                         entry_price = 0.0
                         position_size = 0.0
@@ -1796,7 +1821,8 @@ class BalancedAdaptiveStrategy:
                             'pyramid_entries': pyramid_entries,
                             'trade_duration': trade_age_hours
                         })
-                        
+                        self._notify_trade_close(self.trade_history[-1])
+
                         position = 0
                         entry_price = 0.0
                         position_size = 0.0
@@ -1893,6 +1919,7 @@ class BalancedAdaptiveStrategy:
                         'position_size': position_size,
                         'pyramid_entries': pyramid_entries
                     })
+                    self._notify_trade_open(self.trade_history[-1])
                 
                 elif (filtered_signals['short_weight'] > filtered_signals['long_weight'] and 
                       filtered_signals['short_weight'] >= short_entry_threshold):
@@ -1937,6 +1964,7 @@ class BalancedAdaptiveStrategy:
                         'position_size': position_size,
                         'pyramid_entries': pyramid_entries
                     })
+                    self._notify_trade_open(self.trade_history[-1])
             
             results.append({
                 'date': current.name,
@@ -2558,4 +2586,10 @@ def main():
     return strategy
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        import traceback, sys
+        err = "".join(traceback.format_exception(*sys.exc_info())[-5:])
+        tg_send(f"\u26A0\ufe0f *\u0411\u043E\u0442 \u0443\u043F\u0430\u043B*\n`{e}`\n```{err}```")
+        raise

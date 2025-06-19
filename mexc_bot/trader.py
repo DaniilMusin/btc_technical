@@ -1,4 +1,7 @@
-import asyncio, os, math
+import asyncio
+import os
+import math
+import httpx
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -11,18 +14,24 @@ from services.telegram_bot import TgNotifier
 load_dotenv()
 
 class LiveTrader:
-    def __init__(self, symbol: str, interval: str):
-        self.symbol, self.interval = symbol.upper(), interval
+    def __init__(self, cfg: dict):
+        self.symbol   = cfg.get("symbol", os.getenv("DEFAULT_SYMBOL","BTCUSDT")).upper()
+        self.interval = cfg.get("interval", os.getenv("DEFAULT_INTERVAL","15m"))
         self.testnet  = os.getenv("USE_TESTNET","true").lower()=="true"
+
+        risk = cfg.get("risk", {})
 
         # modules
         self.feed     = StreamingDataFeed(self.symbol, self.interval)
         self.broker   = MexcBroker(testnet=self.testnet)
         self.strategy = BalancedAdaptiveStrategyLive(
-            initial_balance=float(os.getenv("INITIAL_BALANCE",1000))
+            initial_balance=float(risk.get("initial_balance", os.getenv("INITIAL_BALANCE",1000))),
+            max_leverage=int(risk.get("max_leverage", 3)),
+            base_risk_per_trade=float(risk.get("base_risk_per_trade", 0.02)),
+            min_trades_interval=int(risk.get("min_trades_interval", 12)),
         )
         self.tg       = TgNotifier()
-        self.balance  = float(os.getenv("INITIAL_BALANCE",1000))
+        self.balance  = float(risk.get("initial_balance", os.getenv("INITIAL_BALANCE",1000)))
 
     # ------------------------------------------------ #
     async def on_candle(self, df):
@@ -68,11 +77,22 @@ class LiveTrader:
         await self.tg.start()
         try:
             await self.feed.start(self.on_candle)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (401, 403):
+                msg = f"CRITICAL: Authentication failed ({e.response.status_code}). Stopping bot."
+                logger.error(msg)
+                await self.tg.notify(msg)
+                return
+            logger.error("HTTP error %s", e)
+            await self.tg.notify(f"HTTP error: {e}")
+        except Exception as e:
+            logger.exception("Unexpected error: %s", e)
+            await self.tg.notify(f"⚠️ Bot stopped due to {e}")
         finally:
             await self.tg.stop()
 
 # ---------------- script entry ----------------#
 if __name__ == "__main__":
-    sym = os.getenv("DEFAULT_SYMBOL","BTCUSDT")
-    interval = os.getenv("DEFAULT_INTERVAL","15m")
-    asyncio.run(LiveTrader(sym, interval).run())
+    from run import load_config
+    cfg = load_config()
+    asyncio.run(LiveTrader(cfg).run())

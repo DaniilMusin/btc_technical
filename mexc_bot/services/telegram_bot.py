@@ -14,7 +14,7 @@ from telegram.ext import (
 from core.db import stats as db_stats, Session, Trade
 
 load_dotenv()
-TG_TOKEN   = os.getenv("TG_TOKEN")
+TG_TOKEN   = os.getenv("TG_BOT_TOKEN")
 TG_CHAT_ID = int(os.getenv("TG_CHAT_ID"))
 
 class TgNotifier:
