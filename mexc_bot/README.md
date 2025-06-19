@@ -53,25 +53,21 @@ tg_send("Test OK ✅")
 
 ## Configuration
 
-Основные параметры стратегии хранятся в `config.yml`. Важные настройки:
+Параметры торговой стратегии задаются в `config.yml`.
+Пример файла:
 
 ```yaml
 symbol: ${DEFAULT_SYMBOL}
 interval: ${DEFAULT_INTERVAL}
 
-strategy:
-  name: balanced_strategy
-  target_base_currency_ratio: 0.5
-  rebalance_threshold: 0.05
-
 risk:
   initial_balance: ${INITIAL_BALANCE}
   max_leverage: 3
-  base_risk_pct: 0.02
-  min_hours_between_trades: 6
+  base_risk_per_trade: 0.02
+  min_trades_interval: 6
 ```
 
-`target_base_currency_ratio` задаёт долю базовой валюты в портфеле, а `rebalance_threshold` определяет допустимое отклонение перед ребалансировкой.
+Значения вида `${VAR}` подставляются из вашего `.env` файла.
 
 ## Troubleshooting
 

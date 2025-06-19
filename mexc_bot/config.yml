@@ -10,5 +10,5 @@ strategy:
 risk:
   initial_balance: ${INITIAL_BALANCE}
   max_leverage: 3
-  base_risk_pct: 0.02
-  min_hours_between_trades: 6
+  base_risk_per_trade: 0.02
+  min_trades_interval: 6
