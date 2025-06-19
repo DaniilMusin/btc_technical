@@ -91,3 +91,21 @@ print(strategy.data.isna().sum())
 
 These checks usually reveal why the backtest produced no trades.
 
+## FAQ
+
+### How do I make sure Python 3.11 is used instead of the system Python?
+
+If you have several Python versions installed, `pyenv` helps manage them.
+Run the commands below once in the project directory:
+
+```bash
+pyenv install 3.11.12   # skip if already installed
+pyenv local 3.11.12
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+The `.python-version` file pins the interpreter to 3.11.12 so that
+`pyenv` automatically selects it and avoids using the system Python.
+
