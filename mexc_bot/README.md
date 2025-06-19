@@ -51,6 +51,28 @@ tg_send("Test OK ✅")
 
 В стратегию добавлены методы `_notify_trade_open` и `_notify_trade_close`, вызываемые при открытии и закрытии позиции. Если переменные окружения заданы, бот пришлёт уведомления прямо в Telegram.
 
+## Configuration
+
+Основные параметры стратегии хранятся в `config.yml`. Важные настройки:
+
+```yaml
+symbol: ${DEFAULT_SYMBOL}
+interval: ${DEFAULT_INTERVAL}
+
+strategy:
+  name: balanced_strategy
+  target_base_currency_ratio: 0.5
+  rebalance_threshold: 0.05
+
+risk:
+  initial_balance: ${INITIAL_BALANCE}
+  max_leverage: 3
+  base_risk_pct: 0.02
+  min_hours_between_trades: 6
+```
+
+`target_base_currency_ratio` задаёт долю базовой валюты в портфеле, а `rebalance_threshold` определяет допустимое отклонение перед ребалансировкой.
+
 ## Troubleshooting
 
 ### 1. Package `mexc-sdk-python` fails to install
