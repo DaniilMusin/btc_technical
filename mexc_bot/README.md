@@ -15,6 +15,7 @@ docker compose up --build -d
 
 При `USE_TESTNET=true` ордера не отправляются на биржу. Чтобы дополнительно
 сохранять свечи в архив `data/ohlc_archive.csv`, выставьте `ARCHIVE_CSV=true` в
+`.env`.
 `.env`. Архив очищается автоматически, храня данные лишь за последние три
 месяца (переменная `HISTORY_MONTHS` в `.env`).
 
@@ -78,7 +79,7 @@ risk:
 
 The official SDK on PyPI declares compatibility only up to Python 3.11. If you attempt to install it under Python 3.12, `pip` skips the dependency. Use one of the following approaches:
 
-- **Recommended:** run the bot under Python 3.11. The provided Dockerfile already uses `python:3.11-slim`.
+- **Recommended:** run the bot under Python 3.11. The provided Dockerfile already uses `python:3.11-slim`.
 - **Alternative:** install the SDK directly from GitHub (`pip install "git+https://github.com/mexc-dev/mexc-sdk-python@master"`).
 - **Last resort:** ignore the Python requirement with `pip install mexc-sdk-python==1.4.2 --break-system-packages` (may break in future).
 
@@ -99,4 +100,3 @@ print(strategy.data.isna().sum())
 ```
 
 These checks usually reveal why the backtest produced no trades.
-
