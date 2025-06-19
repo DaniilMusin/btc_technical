@@ -17,7 +17,7 @@ docker compose up --build -d
 сохранять свечи в архив `data/ohlc_archive.csv`, выставьте `ARCHIVE_CSV=true` в
 `.env`.
 
-## Python 3.11 required
+## Tested with Python 3.11 / 3.10
 
 `mexc-sdk-python` публикуется с ограничением `<3.12`, поэтому под Python 3.12 зависимость пропускается и проект не собирается.
 Используйте Python **3.11** (или 3.10) в отдельном виртуальном окружении. Ниже пример настройки с помощью `pyenv`:
