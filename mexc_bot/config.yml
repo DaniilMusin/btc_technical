@@ -1,14 +1,4 @@
-symbol: ${DEFAULT_SYMBOL}
-interval: ${DEFAULT_INTERVAL}
-
-# Настройка стратегии ребалансировки
-strategy:
-  name: balanced_strategy
-  target_base_currency_ratio: 0.5  # 50% средств в базовой валюте
-  rebalance_threshold: 0.05        # ребалансировка при отклонении 5%
-
-risk:
-  initial_balance: ${INITIAL_BALANCE}
-  max_leverage: 3
-  base_risk_pct: 0.02
-  min_hours_between_trades: 6
+strategy_name: balanced_strategy
+symbol: BTC_USDT
+target_base_currency_ratio: 0.5  # Целевая доля BTC в портфеле (0.5 = 50%)
+rebalance_threshold: 0.05        # Порог отклонения для ребалансировки (0.05 = 5%)
