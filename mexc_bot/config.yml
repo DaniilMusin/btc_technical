@@ -1,6 +1,12 @@
 symbol: ${DEFAULT_SYMBOL}
 interval: ${DEFAULT_INTERVAL}
 
+# Настройка стратегии ребалансировки
+strategy:
+  name: balanced_strategy
+  target_base_currency_ratio: 0.5  # 50% средств в базовой валюте
+  rebalance_threshold: 0.05        # ребалансировка при отклонении 5%
+
 risk:
   initial_balance: ${INITIAL_BALANCE}
   max_leverage: 3

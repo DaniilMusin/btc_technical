@@ -1,4 +1,9 @@
-import hmac, hashlib, time, os, httpx, asyncio
+import hmac
+import hashlib
+import time
+import os
+import httpx
+import asyncio
 from loguru import logger
 from dotenv import load_dotenv
 
@@ -38,10 +43,8 @@ class MexcBroker:
 
     # ---------- public ---------- #
     async def place_market(self, symbol: str, side: str, qty: float) -> dict:
-        """
-        side = BUY (long)  / SELL (short)
-        Возвращает JSON‑ответ биржи или fake‑ответ в тестовом режиме.
-        """
+        """Send a MARKET order and return exchange response."""
+        qty = float(f"{qty:.6f}")  # форматируем объём под требуемую точность
         if self.testnet:
             # В тестовом режиме используем «нулевой» resp, но ставим fictive‑price
             logger.info("[TESTNET] %s MARKET %s %.6f", symbol, side, qty)
