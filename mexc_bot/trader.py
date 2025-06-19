@@ -1,4 +1,7 @@
-import asyncio, os, math
+import asyncio
+import os
+import math
+import httpx
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -68,6 +71,17 @@ class LiveTrader:
         await self.tg.start()
         try:
             await self.feed.start(self.on_candle)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (401, 403):
+                msg = f"CRITICAL: Authentication failed ({e.response.status_code}). Stopping bot."
+                logger.error(msg)
+                await self.tg.notify(msg)
+                return
+            logger.error("HTTP error %s", e)
+            await self.tg.notify(f"HTTP error: {e}")
+        except Exception as e:
+            logger.exception("Unexpected error: %s", e)
+            await self.tg.notify(f"⚠️ Bot stopped due to {e}")
         finally:
             await self.tg.stop()
 
