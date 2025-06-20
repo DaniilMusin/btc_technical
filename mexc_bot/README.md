@@ -5,7 +5,7 @@
 статистики сделок в SQLite.
 
 > **Note**: Бот использует собственное подключение к WebSocket API MEXC, поэтому
-> дополнительных SDK не требуется. Для совместимости используйте Python 3.11
+> дополнительных SDK не требуется. Для совместимости используйте Python 3.11
 > (или 3.10).
 
 ## Быстрый старт
@@ -24,7 +24,8 @@ docker compose up --build -d
 
 ## Tested with Python 3.11 / 3.10
 
-Используйте Python **3.11** (или 3.10) в отдельном виртуальном окружении. Ниже пример настройки с помощью `pyenv`:
+Используйте Python **3.11** (или 3.10) в отдельном виртуальном окружении. Ниже
+пример настройки с помощью `pyenv`:
 
 ```bash
 pyenv install 3.11.12
@@ -44,7 +45,9 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 
 ## Telegram notifications
 
-Создайте бота через `@BotFather` и запишите `TG_BOT_TOKEN` и `TG_CHAT_ID` в `.env`. Файл `telegram_utils.py` содержит функцию `tg_send()` для отправки сообщений без тяжёлых зависимостей:
+Создайте бота через `@BotFather` и запишите `TG_BOT_TOKEN` и `TG_CHAT_ID` в `.env`.
+Файл `telegram_utils.py` содержит функцию `tg_send()` для отправки сообщений без
+тяжёлых зависимостей:
 
 ```python
 from telegram_utils import tg_send
@@ -52,7 +55,9 @@ from telegram_utils import tg_send
 tg_send("Test OK ✅")
 ```
 
-В стратегию добавлены методы `_notify_trade_open` и `_notify_trade_close`, вызываемые при открытии и закрытии позиции. Если переменные окружения заданы, бот пришлёт уведомления прямо в Telegram.
+В стратегию добавлены методы `_notify_trade_open` и `_notify_trade_close`,
+вызываемые при открытии и закрытии позиции. Если переменные окружения заданы,
+бот пришлёт уведомления прямо в Telegram.
 
 ## Configuration
 
@@ -109,4 +114,3 @@ pip install -r requirements.txt
 
 The `.python-version` file pins the interpreter to 3.11.12 so that
 `pyenv` automatically selects it and avoids using the system Python.
-
