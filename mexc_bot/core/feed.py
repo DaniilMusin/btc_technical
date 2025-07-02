@@ -7,9 +7,10 @@ import websockets
 from dotenv import load_dotenv
 
 load_dotenv()
-ARCHIVE_CSV = os.getenv("ARCHIVE_CSV","false").lower() == "true"
+ARCHIVE_CSV = os.getenv("ARCHIVE_CSV", "false").lower() == "true"
 ARCHIVE_PATH = "data/ohlc_archive.csv"
 HISTORY_MONTHS = int(os.getenv("HISTORY_MONTHS", "3"))
+
 
 class StreamingDataFeed:
     """
@@ -32,36 +33,46 @@ class StreamingDataFeed:
             return 4000
         minutes = value if unit == "m" else value * 60 if unit == "h" else value * 60 * 24
         days = HISTORY_MONTHS * 30
+        # Возвращаем максимальное значение между рассчитанным количеством и 1, чтобы избежать 0
         return max(int(days * 24 * 60 / minutes), 1)
 
     async def start(self, on_candle):
+        """
+        Запускает бесконечный цикл получения данных о свечах через WebSocket.
+        """
         topic = f"spot@public.kline.v3.api@{self.symbol}@{self.interval}"
         async with websockets.connect(self.ws_url) as ws:
             await ws.send(json.dumps({"method": "SUBSCRIPTION", "params": [topic], "id": 1}))
             async for raw in ws:
                 msg = json.loads(raw)
+                # MEXC периодически отправляет ping, на который нужно отвечать pong
                 if "ping" in msg:
                     await ws.send(json.dumps({"pong": msg["ping"]}))
                     continue
+                
                 # ---------- валидация сообщения ---------- #
                 if not msg or "d" not in msg:
                     continue
                 k = msg["d"]
+                # Убеждаемся, что это сообщение о закрытой свече
                 if k.get("e") != "kline" or not k.get("x"):
                     continue
 
                 candle = {
-                    "Open time": dt.datetime.fromtimestamp(k["t"]/1000),
-                    "Open"     : float(k["o"]),
-                    "High"     : float(k["h"]),
-                    "Low"      : float(k["l"]),
-                    "Close"    : float(k["c"]),
-                    "Volume"   : float(k["v"]),
+                    "Open time": dt.datetime.fromtimestamp(k["t"] / 1000),
+                    "Open": float(k["o"]),
+                    "High": float(k["h"]),
+                    "Low": float(k["l"]),
+                    "Close": float(k["c"]),
+                    "Volume": float(k["v"]),
                 }
+                
+                # Обновляем основной DataFrame
                 self.df = (
                     pd.concat([self.df, pd.DataFrame([candle])])
                     .set_index("Open time")
                 )
+                # Обрезаем старые данные, чтобы DataFrame не рос бесконечно
                 cutoff = dt.datetime.utcnow() - dt.timedelta(days=HISTORY_MONTHS * 30)
                 self.df = self.df[self.df.index >= cutoff].tail(self.max_rows)
 
@@ -73,13 +84,15 @@ class StreamingDataFeed:
 
                 # ---------- (опц.) архивируем ---------- #
                 if ARCHIVE_CSV:
+                    # Перечитываем архив, добавляем свечу и обрезаем старые данные
                     if os.path.exists(ARCHIVE_PATH):
                         arch = pd.read_csv(ARCHIVE_PATH, parse_dates=["Open time"])
                     else:
                         arch = pd.DataFrame()
                     arch = pd.concat([arch, pd.DataFrame([candle])])
-                    cutoff = dt.datetime.utcnow() - dt.timedelta(days=HISTORY_MONTHS * 30)
-                    arch = arch[arch["Open time"] >= cutoff]
+                    arch_cutoff = dt.datetime.utcnow() - dt.timedelta(days=HISTORY_MONTHS * 30)
+                    arch = arch[arch["Open time"] >= arch_cutoff]
                     arch.to_csv(ARCHIVE_PATH, index=False)
 
+                # Вызываем колбэк с копией DataFrame
                 await on_candle(self.df.copy())

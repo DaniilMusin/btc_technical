@@ -19,13 +19,16 @@ docker compose up --build -d
 
 При `USE_TESTNET=true` ордера не отправляются на биржу. Чтобы дополнительно
 сохранять свечи в архив `data/ohlc_archive.csv`, выставьте `ARCHIVE_CSV=true` в
+
 `.env`. Архив очищается автоматически, храня данные лишь за последние три
 месяца (переменная `HISTORY_MONTHS` в `.env`).
 
 ## Tested with Python 3.11 / 3.10
 
+
 Используйте Python **3.11** (или 3.10) в отдельном виртуальном окружении. Ниже
 пример настройки с помощью `pyenv`:
+
 
 ```bash
 pyenv install 3.11.12
@@ -39,6 +42,7 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 
 ## Backtest
 
+
 Для проверки стратегии требуется CSV со свечами. Файл `btc_1d_data_2018_to_2025.csv`
 удалён из репозитория, поэтому используйте собственный набор данных или
 скачайте аналогичный исторический файл.
@@ -49,15 +53,18 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 Файл `telegram_utils.py` содержит функцию `tg_send()` для отправки сообщений без
 тяжёлых зависимостей:
 
+
 ```python
 from telegram_utils import tg_send
 
 tg_send("Test OK ✅")
 ```
 
+
 В стратегию добавлены методы `_notify_trade_open` и `_notify_trade_close`,
 вызываемые при открытии и закрытии позиции. Если переменные окружения заданы,
 бот пришлёт уведомления прямо в Telegram.
+
 
 ## Configuration
 
@@ -79,7 +86,9 @@ risk:
 
 ## Troubleshooting
 
+
 ### `run_backtest()` returns an empty DataFrame
+
 
 Check the input CSV:
 
@@ -96,6 +105,7 @@ print(strategy.data.isna().sum())
 ```
 
 These checks usually reveal why the backtest produced no trades.
+
 
 ## FAQ
 
@@ -114,3 +124,4 @@ pip install -r requirements.txt
 
 The `.python-version` file pins the interpreter to 3.11.12 so that
 `pyenv` automatically selects it and avoids using the system Python.
+
