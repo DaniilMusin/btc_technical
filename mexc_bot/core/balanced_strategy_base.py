@@ -2554,8 +2554,19 @@ class BalancedAdaptiveStrategy:
 def main():
     """Main function to execute the strategy"""
     import os
-    
-    base_dir = r"C:\Diploma\Pet"
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Run BalancedAdaptiveStrategy backtest"
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=os.getenv("DATA_DIR", "."),
+        help="Directory containing CSV data files",
+    )
+    args = parser.parse_args()
+
+    base_dir = args.data_dir
     csv_files = [f for f in os.listdir(base_dir) if f.endswith('.csv')]
     
     if not csv_files:
@@ -2578,7 +2589,7 @@ def main():
     strategy.load_data()
     strategy.calculate_indicators()
     strategy.run_backtest()
-    stats = strategy.analyze_results()
+    strategy.analyze_results()
     
     strategy.plot_equity_curve()
     strategy.plot_regime_performance()
