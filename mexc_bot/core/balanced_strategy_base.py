@@ -616,11 +616,13 @@ class BalancedAdaptiveStrategy:
             else:
                 medium_direction = 0
 
+
             if len(recent) >= long_period:
                 (
                     recent["Close"].iloc[-1]
                     - recent["Close"].iloc[-long_period]
                 ) / recent["Close"].iloc[-long_period]
+
 
             # Calculate volatility
             if len(recent) >= short_period:
@@ -3755,8 +3757,10 @@ def main():
     """Main function to execute the strategy"""
     import os
 
+
     base_dir = r"C:\Diploma\Pet"
     csv_files = [f for f in os.listdir(base_dir) if f.endswith(".csv")]
+
 
     if not csv_files:
         print(
@@ -3782,7 +3786,6 @@ def main():
     strategy.calculate_indicators()
     strategy.run_backtest()
     strategy.analyze_results()
-
     strategy.plot_equity_curve()
     strategy.plot_regime_performance()
 
