@@ -5,7 +5,10 @@ import requests
 TG_TOKEN = os.getenv("TG_BOT_TOKEN")
 TG_CHAT = os.getenv("TG_CHAT_ID")
 
-def tg_send(text: str, parse_mode: str = "Markdown", silent: bool = False) -> None:
+
+def tg_send(
+    text: str, parse_mode: str = "Markdown", silent: bool = False
+) -> None:
     """Send a simple Telegram message if credentials are set."""
     if not (TG_TOKEN and TG_CHAT):
         return
