@@ -1,11 +1,14 @@
-import datetime as dt, os, pandas as pd
+import datetime as dt
+import os
+import pandas as pd
 from loguru import logger
-from mexc_sdk import WsSpot            # spot. Для фьючей: WsContract
+from mexc_sdk import WsSpot  # spot. Для фьючей: WsContract
 from dotenv import load_dotenv
 
 load_dotenv()
-ARCHIVE_CSV = os.getenv("ARCHIVE_CSV","false").lower() == "true"
+ARCHIVE_CSV = os.getenv("ARCHIVE_CSV", "false").lower() == "true"
 ARCHIVE_PATH = "data/ohlc_archive.csv"
+
 
 class StreamingDataFeed:
     """
@@ -30,12 +33,12 @@ class StreamingDataFeed:
                 continue
 
             candle = {
-                "Open time": dt.datetime.fromtimestamp(k["t"]/1000),
-                "Open"     : float(k["o"]),
-                "High"     : float(k["h"]),
-                "Low"      : float(k["l"]),
-                "Close"    : float(k["c"]),
-                "Volume"   : float(k["v"]),
+                "Open time": dt.datetime.fromtimestamp(k["t"] / 1000),
+                "Open": float(k["o"]),
+                "High": float(k["h"]),
+                "Low": float(k["l"]),
+                "Close": float(k["c"]),
+                "Volume": float(k["v"]),
             }
             self.df = (
                 pd.concat([self.df, pd.DataFrame([candle])])
@@ -46,15 +49,19 @@ class StreamingDataFeed:
             logger.debug(
                 "Candle %s  O:%.2f C:%.2f V:%.1f",
                 candle["Open time"].strftime("%Y-%m-%d %H:%M"),
-                candle["Open"], candle["Close"], candle["Volume"]
+                candle["Open"],
+                candle["Close"],
+                candle["Volume"],
             )
 
             # ---------- (опц.) архивируем ---------- #
             if ARCHIVE_CSV:
                 # append – быстрее, чем перезаписывать
                 pd.DataFrame([candle]).to_csv(
-                    ARCHIVE_PATH, index=False, mode="a",
-                    header=not os.path.exists(ARCHIVE_PATH)
+                    ARCHIVE_PATH,
+                    index=False,
+                    mode="a",
+                    header=not os.path.exists(ARCHIVE_PATH),
                 )
 
             await on_candle(self.df.copy())
