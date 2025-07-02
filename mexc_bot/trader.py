@@ -70,6 +70,7 @@ class LiveTrader:
             await self.feed.start(self.on_candle)
         finally:
             await self.tg.stop()
+            await self.broker.close()
 
 # ---------------- script entry ----------------#
 if __name__ == "__main__":
