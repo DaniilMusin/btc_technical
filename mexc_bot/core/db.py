@@ -3,17 +3,10 @@ SQLite + SQLAlchemy модели и функции.
 Храним только факты сделок – этого достаточно, чтобы стратегия при перезапуске
 понимала свою недавнюю статистику win‑rate / profit‑factor.
 """
-
-import os
+import os, datetime as dt
 from dotenv import load_dotenv
 from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    Float,
-    String,
-    DateTime,
-    func,
+    create_engine, Column, Integer, Float, String, DateTime, func
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
 
@@ -25,19 +18,17 @@ Session = scoped_session(sessionmaker(bind=engine, expire_on_commit=False))
 Base = declarative_base()
 
 # ----------------------- модель ----------------------- #
-
-
 class Trade(Base):
     __tablename__ = "trades"
-    id = Column(Integer, primary_key=True)
-    entry_date = Column(DateTime, nullable=False)
-    exit_date = Column(DateTime, nullable=False)
-    position = Column(String, nullable=False)  # LONG / SHORT
-    qty = Column(Float, nullable=False)
-    entry_price = Column(Float, nullable=False)
-    exit_price = Column(Float, nullable=False)
-    pnl = Column(Float, nullable=False)
-    reason = Column(String, nullable=False)
+    id           = Column(Integer, primary_key=True)
+    entry_date   = Column(DateTime, nullable=False)
+    exit_date    = Column(DateTime, nullable=False)
+    position     = Column(String, nullable=False)           # LONG / SHORT
+    qty          = Column(Float, nullable=False)
+    entry_price  = Column(Float, nullable=False)
+    exit_price   = Column(Float, nullable=False)
+    pnl          = Column(Float, nullable=False)
+    reason       = Column(String, nullable=False)
 
     def __repr__(self) -> str:
         return (
@@ -45,13 +36,9 @@ class Trade(Base):
             f"EP={self.entry_price} XP={self.exit_price} PNL={self.pnl:.2f}>"
         )
 
-
 # ------------------ служебные функции ----------------- #
-
-
 def init_db():
     Base.metadata.create_all(engine)
-
 
 def store_trade(**kwargs):
     """Сохраняет одну сделку и возвращает объект Trade."""
@@ -62,20 +49,23 @@ def store_trade(**kwargs):
         s.refresh(t)
         return t
 
-
 def last_n_pnl(n: int = 50):
     """Возвращает список pnl последних n сделок."""
     with Session() as s:
-        rows = s.query(Trade.pnl).order_by(Trade.id.desc()).limit(n).all()
+        rows = (
+            s.query(Trade.pnl)
+            .order_by(Trade.id.desc())
+            .limit(n)
+            .all()
+        )
     return [r[0] for r in rows]
-
 
 def stats():
     """Базовая сводка (для Telegram‑/REST‑отчётов)."""
     with Session() as s:
         total = s.query(func.count(Trade.id)).scalar()
-        win = s.query(func.count(Trade.id)).filter(Trade.pnl > 0).scalar()
-        pnl = s.query(func.sum(Trade.pnl)).scalar()
+        win   = s.query(func.count(Trade.id)).filter(Trade.pnl > 0).scalar()
+        pnl   = s.query(func.sum(Trade.pnl)).scalar()
     pnl = pnl or 0
     win_rate = (win / total * 100) if total else 0
     return {"trades": total, "wins": win, "pnl": pnl, "win_rate": win_rate}
