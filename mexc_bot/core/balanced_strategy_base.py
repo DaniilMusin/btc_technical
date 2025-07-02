@@ -467,13 +467,7 @@ class BalancedAdaptiveStrategy:
                                     recent['Close'].iloc[-medium_period]
             else:
                 medium_direction = 0
-            
-            if len(recent) >= long_period:
-                long_direction = (recent['Close'].iloc[-1] - recent['Close'].iloc[-long_period]) / \
-                                  recent['Close'].iloc[-long_period]
-            else:
-                long_direction = 0
-            
+
             # Calculate volatility
             if len(recent) >= short_period:
                 short_vol = recent['Close'].pct_change().rolling(short_period).std().iloc[-1]
