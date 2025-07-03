@@ -14,7 +14,7 @@ from telegram.ext import (
 from core.db import stats as db_stats, Session, Trade
 
 load_dotenv()
-TG_TOKEN = os.getenv("TG_TOKEN")
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 TG_CHAT_ID = os.getenv("TG_CHAT_ID")
 if TG_CHAT_ID is not None:
     try:
@@ -25,8 +25,8 @@ if TG_CHAT_ID is not None:
 
 class TgNotifier:
     def __init__(self):
-        if TG_TOKEN:
-            self.app = ApplicationBuilder().token(TG_TOKEN).build()
+        if TG_BOT_TOKEN:
+            self.app = ApplicationBuilder().token(TG_BOT_TOKEN).build()
             self.app.add_handler(CommandHandler("stats", self.cmd_stats))
             self.app.add_handler(CommandHandler("last",  self.cmd_last))
         else:
