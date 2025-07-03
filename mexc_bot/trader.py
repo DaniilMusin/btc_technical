@@ -76,11 +76,13 @@ class LiveTrader:
                 exit_price = float(resp.get("fills", [{"price": 0.0}])[0]["price"])
             if not exit_price:
                 exit_price = df["Close"].iloc[-1]
-            self.strategy.close_position(
+            trade = self.strategy.close_position(
                 exit_price,
                 ts,
                 reason="SL/TP or signal",
             )
+            if trade is not None:
+                self.balance += trade.pnl
             await self.tg.notify(f"✅ *CLOSE* PNL posted")
             return
 
