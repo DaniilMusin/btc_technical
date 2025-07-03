@@ -11,12 +11,15 @@ from services.telegram_bot import TgNotifier
 load_dotenv()
 
 class LiveTrader:
-    def __init__(self, symbol: str, interval: str):
+    def __init__(self, symbol: str, interval: str, exchange: str = "BINGX"):
         self.symbol, self.interval = symbol.upper(), interval
-        self.testnet  = os.getenv("USE_TESTNET","true").lower()=="true"
+        self.exchange = exchange.upper()
+        self.testnet = os.getenv("USE_TESTNET", "true").lower() == "true"
 
         # modules
-        self.feed     = StreamingDataFeed(self.symbol, self.interval)
+        self.feed = StreamingDataFeed(self.symbol, self.interval, exchange=self.exchange)
+        if self.exchange != "BINGX":
+            raise NotImplementedError(f"Exchange {self.exchange} is not supported")
         self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
         self.strategy = BalancedAdaptiveStrategyLive(
             initial_balance=float(os.getenv("INITIAL_BALANCE",1000))
@@ -107,6 +110,7 @@ class LiveTrader:
 
 # ---------------- script entry ----------------#
 if __name__ == "__main__":
-    sym = os.getenv("DEFAULT_SYMBOL","BTCUSDT")
-    interval = os.getenv("DEFAULT_INTERVAL","15m")
-    asyncio.run(LiveTrader(sym, interval).run())
+    sym = os.getenv("DEFAULT_SYMBOL", "BTCUSDT")
+    interval = os.getenv("DEFAULT_INTERVAL", "15m")
+    exch = os.getenv("EXCHANGE", "BINGX")
+    asyncio.run(LiveTrader(sym, interval, exchange=exch).run())
