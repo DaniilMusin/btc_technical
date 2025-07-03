@@ -17,6 +17,8 @@ docker compose up --build -d
 задать `BINGX_TESTNET=true` — это внутренний алиас `USE_TESTNET`, включающий
 dry-run режим. Чтобы дополнительно сохранять свечи в архив `data/ohlc_archive.csv`,
 выставьте `ARCHIVE_CSV=true` в `.env`.
+Для фьючерсных ордеров BingX поддерживаются переменные `BINGX_MARGIN_MODE` и
+`BINGX_LEVERAGE`. По умолчанию используется изолированная маржа и плечо 3x.
 
 ## Tested with Python 3.11 / 3.10
 
