@@ -49,7 +49,11 @@ class LiveTrader:
             resp = await self.broker.place_market(self.symbol, side, qty)
             fill_price = resp.get("price")
             if fill_price is None:
-                fill_price = float(resp.get("fills", [{"price": 0.0}])[0]["price"])
+                fills = resp.get("fills")
+                if fills and isinstance(fills, list) and len(fills) > 0:
+                    fill_price = float(fills[0].get("price", 0.0))
+                else:
+                    fill_price = 0.0
             if not fill_price:
                 fill_price = df["Close"].iloc[-1]
 
@@ -73,7 +77,11 @@ class LiveTrader:
             )
             exit_price = resp.get("price")
             if exit_price is None:
-                exit_price = float(resp.get("fills", [{"price": 0.0}])[0]["price"])
+                fills = resp.get("fills")
+                if fills and isinstance(fills, list) and len(fills) > 0:
+                    exit_price = float(fills[0].get("price", 0.0))
+                else:
+                    exit_price = 0.0
             if not exit_price:
                 exit_price = df["Close"].iloc[-1]
             trade = self.strategy.close_position(
