@@ -22,7 +22,7 @@ sys.path.insert(0, BASE_DIR)
 sys.modules.setdefault("mexc_sdk", types.ModuleType("mexc_sdk")).WsSpot = object
 sys.modules.setdefault("services.telegram_bot", types.ModuleType("services.telegram_bot")).TgNotifier = DummyTg
 
-trader = importlib.import_module('trader')
+trader = importlib.import_module('core.trader')
 strategy = importlib.import_module('core.strategy')
 
 class DummyTrade:
