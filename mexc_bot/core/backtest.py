@@ -3,7 +3,7 @@ from typing import Optional
 import logging
 import pandas as pd
 
-from .constants import COMMISSION_RATE_ENTRY, COMMISSION_RATE_EXIT
+from .broker import SINGLE_SIDE_FEE
 
 
 def run_backtest(strategy) -> Optional[pd.DataFrame]:
@@ -177,7 +177,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
                     old_value = entry_price * position_size
                     new_value = current['Close'] * additional_size
                     position_size += additional_size
-                    balance -= additional_size * COMMISSION_RATE_ENTRY
+                    balance -= additional_size * SINGLE_SIDE_FEE
                     entry_price = (old_value + new_value) / position_size
                     exit_levels = strategy.calculate_dynamic_exit_levels('SHORT', entry_price, current)
                     stop_loss_price = exit_levels['stop_loss']
@@ -197,7 +197,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
             entry_date = current.name
             stop_loss_price = exit_levels['stop_loss']
             take_profit_price = exit_levels['take_profit']
-            balance -= position_size * COMMISSION_RATE_ENTRY
+            balance -= position_size * SINGLE_SIDE_FEE
             strategy.trade_history.append({
                 'entry_date': current.name,
                 'position': 'LONG',
@@ -224,7 +224,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
             entry_date = current.name
             stop_loss_price = exit_levels['stop_loss']
             take_profit_price = exit_levels['take_profit']
-            balance -= position_size * COMMISSION_RATE_ENTRY
+            balance -= position_size * SINGLE_SIDE_FEE
             strategy.trade_history.append({
                 'entry_date': current.name,
                 'position': 'SHORT',
@@ -265,7 +265,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
         if position == 1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
             partial_size = position_size * 0.4
             partial_pnl = partial_size * ((current['Close'] / entry_price) - 1)
-            commission = partial_size * COMMISSION_RATE_EXIT
+            commission = partial_size * SINGLE_SIDE_FEE
             slippage = partial_size * strategy.slippage_pct / 100
             partial_pnl -= (commission + slippage)
             balance += partial_pnl
@@ -273,7 +273,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
         if position == -1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
             partial_size = position_size * 0.4
             partial_pnl = partial_size * (1 - (current['Close'] / entry_price))
-            commission = partial_size * COMMISSION_RATE_EXIT
+            commission = partial_size * SINGLE_SIDE_FEE
             slippage = partial_size * strategy.slippage_pct / 100
             partial_pnl -= (commission + slippage)
             balance += partial_pnl
@@ -290,7 +290,7 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
             old_value = entry_price * position_size
             new_value = current['Close'] * additional_size
             position_size += additional_size
-            balance -= additional_size * COMMISSION_RATE_ENTRY
+            balance -= additional_size * SINGLE_SIDE_FEE
             entry_price = (old_value + new_value) / position_size
             exit_levels = strategy.calculate_dynamic_exit_levels('LONG', entry_price, current)
             stop_loss_price = exit_levels['stop_loss']

@@ -44,11 +44,11 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 ## Комиссия
 
 Комиссии на вход и выход рассчитываются отдельно.
-При открытии позиции баланс уменьшается на `position_size * COMMISSION_RATE_ENTRY`.
-При закрытии комиссия берётся как `position_size * exit_price * COMMISSION_RATE_EXIT` и
+При открытии позиции баланс уменьшается на `position_size * SINGLE_SIDE_FEE`.
+При закрытии комиссия берётся как `position_size * exit_price * SINGLE_SIDE_FEE` и
 вычитается из расчёта PnL. Оба коэффициента по умолчанию равны `0.00035`,
 что в сумме соответствует прежнему уровню 0.07% за полный круг.
-Значения задаются в `mexc_bot.core.constants` и используются как в стратегии, так
+Значение комиссии задаётся в `mexc_bot.core.broker` и используется как в стратегии, так
 и в модуле `backtest`.
 
 ## Telegram notifications
