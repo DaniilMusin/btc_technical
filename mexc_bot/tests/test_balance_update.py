@@ -38,6 +38,7 @@ async def dummy_place_market(symbol, side, qty):
 
 def test_balance_updates_on_close(monkeypatch):
     lt = trader.LiveTrader('BTCUSDT', '1m')
+    assert isinstance(lt.feed, trader.StreamingDataFeed)
     lt.strategy.side = 'LONG'
     lt.strategy.qty = 1.0
     lt.strategy.entry = 100.0
