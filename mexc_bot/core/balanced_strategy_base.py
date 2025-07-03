@@ -3,6 +3,7 @@ import numpy as np
 
 import logging
 from loguru import logger
+import os
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import warnings
@@ -31,6 +32,8 @@ MIN_BALANCE = 1000
 MIN_POSITION = 100
 
 logging.basicConfig(level=logging.INFO)
+LOG_FILE = os.getenv("LOG_FILE", "mexc_bot.log")
+logger.add(LOG_FILE, rotation="1 MB")
 
 @dataclass
 class StrategyConfig:
