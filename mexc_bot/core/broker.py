@@ -54,3 +54,7 @@ class MexcBroker:
             "type": "MARKET",
             "quantity": qty
         })
+
+    async def close(self):
+        """Close underlying HTTP client."""
+        await self._client.aclose()
