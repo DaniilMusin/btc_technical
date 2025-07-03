@@ -1,9 +1,18 @@
+"""Core strategy module used for backtesting BTC futures trading logic.
+
+This file contains the ``BalancedAdaptiveStrategy`` class and supporting
+utilities.  It is responsible for running backtests and evaluating strategy
+parameters before deployment in live trading.
+"""
+
 import pandas as pd
 import numpy as np
 
 import logging
 from loguru import logger
+
 import os
+
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import warnings
