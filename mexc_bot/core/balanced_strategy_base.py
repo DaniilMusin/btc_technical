@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from telegram_utils import tg_send
 
 # Магические числа
-COMMISSION_RATE = 0.0008  # 0.08% round-trip
+COMMISSION_RATE = 0.0007  # 0.07% round-trip
 SLIPPAGE_PCT = 0.05       # 0.05% по умолчанию
 MIN_BALANCE = 1000
 MIN_POSITION = 100
@@ -1990,7 +1990,7 @@ class BalancedAdaptiveStrategy:
             if position == 1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * ((current['Close'] / entry_price) - 1)
-                commission = partial_size * 0.0004  # 0.02% вход + 0.02% выход
+                commission = partial_size * 0.00035  # half of round-trip
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
@@ -1998,7 +1998,7 @@ class BalancedAdaptiveStrategy:
             if position == -1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * (1 - (current['Close'] / entry_price))
-                commission = partial_size * 0.0004
+                commission = partial_size * 0.00035
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
