@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from core.feed import StreamingDataFeed
-from core.broker import MexcBroker
+from core.broker import MexcBroker, BingxBroker
 from core.strategy import BalancedAdaptiveStrategyLive
 from core.db import init_db
 from services.telegram_bot import TgNotifier
@@ -17,7 +17,11 @@ class LiveTrader:
 
         # modules
         self.feed     = StreamingDataFeed(self.symbol, self.interval)
-        self.broker   = MexcBroker(testnet=self.testnet)
+        exchange = os.getenv("EXCHANGE", "MEXC").upper()
+        if exchange == "BINGX":
+            self.broker = BingxBroker(testnet=self.testnet)
+        else:
+            self.broker = MexcBroker(testnet=self.testnet)
         self.strategy = BalancedAdaptiveStrategyLive(
             initial_balance=float(os.getenv("INITIAL_BALANCE",1000))
         )
@@ -43,9 +47,11 @@ class LiveTrader:
 
             side = "BUY" if decision["action"] == "BUY" else "SELL"
             resp = await self.broker.place_market(self.symbol, side, qty)
-            fill_price = (
-                float(resp["fills"][0]["price"]) or df["Close"].iloc[-1]
-            )
+            fill_price = resp.get("price")
+            if fill_price is None:
+                fill_price = float(resp.get("fills", [{"price": 0.0}])[0]["price"])
+            if not fill_price:
+                fill_price = df["Close"].iloc[-1]
 
             self.strategy.open_position(
                 "LONG" if side=="BUY" else "SHORT",
@@ -65,9 +71,11 @@ class LiveTrader:
                 close_side,
                 self.strategy.qty,
             )
-            exit_price = (
-                float(resp["fills"][0]["price"]) or df["Close"].iloc[-1]
-            )
+            exit_price = resp.get("price")
+            if exit_price is None:
+                exit_price = float(resp.get("fills", [{"price": 0.0}])[0]["price"])
+            if not exit_price:
+                exit_price = df["Close"].iloc[-1]
             self.strategy.close_position(
                 exit_price,
                 ts,

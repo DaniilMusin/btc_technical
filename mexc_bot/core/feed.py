@@ -1,8 +1,10 @@
 import datetime as dt
 import os
+import json
 import pandas as pd
 from loguru import logger
 from mexc_sdk import WsSpot  # spot. Для фьючей: WsContract
+import websockets
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,44 +22,89 @@ class StreamingDataFeed:
         self.symbol, self.interval = symbol.upper(), interval
         self.max_rows = max_rows
         self.df = pd.DataFrame()
-        self.ws = WsSpot()
+        self.exchange = os.getenv("EXCHANGE", "MEXC").upper()
+        if self.exchange == "MEXC":
+            self.ws = WsSpot()
+        else:
+            self.ws = None
 
     async def start(self, on_candle):
-        topic = f"spot@public.kline.v3.api@{self.symbol}@{self.interval}"
-        async for msg in self.ws.subscribe(topic):
-            # ---------- валидация сообщения ---------- #
-            if not msg or "d" not in msg:
-                continue
-            k = msg["d"]
-            if k["e"] != "kline" or k.get("x") is False:
-                continue
+        if self.exchange == "MEXC":
+            topic = f"spot@public.kline.v3.api@{self.symbol}@{self.interval}"
+            async for msg in self.ws.subscribe(topic):
+                if not msg or "d" not in msg:
+                    continue
+                k = msg["d"]
+                if k.get("e") != "kline" or k.get("x") is False:
+                    continue
 
-            candle = {
-                "Open time": dt.datetime.fromtimestamp(k["t"] / 1000),
-                "Open": float(k["o"]),
-                "High": float(k["h"]),
-                "Low": float(k["l"]),
-                "Close": float(k["c"]),
-                "Volume": float(k["v"]),
-            }
-            self.df = (
-                pd.concat([self.df, pd.DataFrame([candle])])
-                .tail(self.max_rows)
-                .set_index("Open time")
-            )
-
-            logger.debug(
-                "Candle %s  O:%.2f C:%.2f V:%.1f",
-                candle["Open time"].strftime("%Y-%m-%d %H:%M"),
-                candle["Open"], candle["Close"], candle["Volume"]
-            )
-
-            # ---------- (опц.) архивируем ---------- #
-            if ARCHIVE_CSV:
-                # append – быстрее, чем перезаписывать
-                pd.DataFrame([candle]).to_csv(
-                    ARCHIVE_PATH, index=False, mode="a",
-                    header=not os.path.exists(ARCHIVE_PATH)
+                candle = {
+                    "Open time": dt.datetime.fromtimestamp(k["t"] / 1000),
+                    "Open": float(k["o"]),
+                    "High": float(k["h"]),
+                    "Low": float(k["l"]),
+                    "Close": float(k["c"]),
+                    "Volume": float(k["v"]),
+                }
+                self.df = (
+                    pd.concat([self.df, pd.DataFrame([candle])])
+                    .tail(self.max_rows)
+                    .set_index("Open time")
                 )
 
-            await on_candle(self.df.copy())
+                logger.debug(
+                    "Candle %s  O:%.2f C:%.2f V:%.1f",
+                    candle["Open time"].strftime("%Y-%m-%d %H:%M"),
+                    candle["Open"], candle["Close"], candle["Volume"],
+                )
+
+                if ARCHIVE_CSV:
+                    pd.DataFrame([candle]).to_csv(
+                        ARCHIVE_PATH,
+                        index=False,
+                        mode="a",
+                        header=not os.path.exists(ARCHIVE_PATH),
+                    )
+
+                await on_candle(self.df.copy())
+        else:
+            topic = f"kline_{self.interval}_{self.symbol.lower()}"
+            async with websockets.connect("wss://open-api.bingx.com/market") as ws:
+                await ws.send(json.dumps({"type": "subscribe", "topic": topic}))
+                async for raw in ws:
+                    msg = json.loads(raw)
+                    k = msg.get("data") or msg
+                    if not k:
+                        continue
+                    if k.get("event") != "kline" and "c" not in k:
+                        continue
+
+                    candle = {
+                        "Open time": dt.datetime.fromtimestamp(k["t"] / 1000),
+                        "Open": float(k["o"]),
+                        "High": float(k["h"]),
+                        "Low": float(k["l"]),
+                        "Close": float(k["c"]),
+                        "Volume": float(k["v"]),
+                    }
+                    self.df = (
+                        pd.concat([self.df, pd.DataFrame([candle])])
+                        .tail(self.max_rows)
+                        .set_index("Open time")
+                    )
+
+                    logger.debug(
+                        "Candle %s  O:%.2f C:%.2f V:%.1f",
+                        candle["Open time"].strftime("%Y-%m-%d %H:%M"),
+                        candle["Open"], candle["Close"], candle["Volume"],
+                    )
+
+                    if ARCHIVE_CSV:
+                        pd.DataFrame([candle]).to_csv(
+                            ARCHIVE_PATH,
+                            index=False,
+                            mode="a",
+                            header=not os.path.exists(ARCHIVE_PATH),
+                        )
+
+                    await on_candle(self.df.copy())
