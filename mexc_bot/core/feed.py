@@ -23,11 +23,11 @@ class StreamingDataFeed:
     При ARCHIVE_CSV=true каждую свечу добавляет в CSV‑архив.
     """
 
-    def __init__(self, symbol: str, interval: str, max_rows: int = 4000):
+    def __init__(self, symbol: str, interval: str, exchange: str | None = None, max_rows: int = 4000):
         self.symbol, self.interval = symbol.upper(), interval
         self.max_rows = max_rows
         self.df = pd.DataFrame()
-        self.exchange = os.getenv("EXCHANGE", "MEXC").upper()
+        self.exchange = (exchange or os.getenv("EXCHANGE", "MEXC")).upper()
         if self.exchange == "MEXC":
             if WsSpot is None:
                 raise ImportError(
