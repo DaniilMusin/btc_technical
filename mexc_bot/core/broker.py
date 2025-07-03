@@ -13,7 +13,8 @@ load_dotenv()
 class BaseBroker:
     """Abstract broker with basic helpers and dry-run support."""
 
-    COMMISSION_RATE = 0.0007
+    COMMISSION_RATE_ENTRY = 0.00035
+    COMMISSION_RATE_EXIT = 0.00035
 
     def __init__(self, testnet: bool = True):
         self.testnet = testnet
@@ -112,6 +113,8 @@ class BingxBroker(BaseBroker):
     def __init__(self, testnet: bool = True, symbol: str | None = None):
         super().__init__(testnet)
         self.symbol = (symbol or os.getenv("DEFAULT_SYMBOL", "BTCUSDT")).upper()
+        self.margin_mode = os.getenv("BINGX_MARGIN_MODE", "isolated")
+        self.leverage = int(os.getenv("BINGX_LEVERAGE", 3))
         self.qty_precision = 3
         self.price_precision = 1
         self._load_precision()
@@ -210,12 +213,14 @@ class BingxBroker(BaseBroker):
                 "side": side,
                 "type": "LIMIT",
                 "quantity": qty,
+
                 "price": price,
                 "takeProfit": take_profit,
                 "stopLoss": stop_loss,
             }
         )
-        params |= {"marginMode": "isolated", "leverage": 3}
+        
+        params |= {"marginMode": self.margin_mode, "leverage": self.leverage}
         if self.testnet:
             logger.info(
                 "[TESTNET] %s LIMIT %s %.6f @ %.2f",
