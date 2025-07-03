@@ -11,3 +11,4 @@ requests~=2
 mexc-sdk-python~=1.4
 matplotlib~=3.9
 
+# файл сохранён в кодировке UTF-8
