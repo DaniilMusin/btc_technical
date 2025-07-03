@@ -6,7 +6,9 @@ Live‑адаптер для BalancedAdaptiveStrategy.
   • fix: используем close‑price при тестнет‑ответе 0.0
 """
 from __future__ import annotations
-import datetime as dt, os, pandas as pd, numpy as np
+import datetime as dt
+import os
+import pandas as pd
 from typing import Optional, Literal, Dict, Any
 
 from loguru import logger
@@ -15,11 +17,11 @@ from .balanced_strategy_base import BalancedAdaptiveStrategy
 from .db import store_trade, last_n_pnl
 
 load_dotenv()
-WARMUP_CANDLES         = int(os.getenv("WARMUP_CANDLES", "300"))
+WARMUP_CANDLES = int(os.getenv("WARMUP_CANDLES", "300"))
 TRAIL_TRIGGER_LONG_PCT = float(os.getenv("TRAIL_TRIGGER_LONG", "0.04"))
-TRAIL_TRIGGER_SHORT_PCT= float(os.getenv("TRAIL_TRIGGER_SHORT", "0.04"))
-TRAIL_SL_LONG_PCT      = float(os.getenv("TRAIL_SL_LONG", "0.02"))   # 2 %
-TRAIL_SL_SHORT_PCT     = float(os.getenv("TRAIL_SL_SHORT", "0.02"))
+TRAIL_TRIGGER_SHORT_PCT = float(os.getenv("TRAIL_TRIGGER_SHORT", "0.04"))
+TRAIL_SL_LONG_PCT = float(os.getenv("TRAIL_SL_LONG", "0.02"))  # 2 %
+TRAIL_SL_SHORT_PCT = float(os.getenv("TRAIL_SL_SHORT", "0.02"))
 
 class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
     def __init__(self, **kw):
@@ -101,8 +103,11 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
     def close_position(self, exit_price: float, ts: dt.datetime, reason: str):
         if not self.side:
             return
-        pnl = (exit_price - self.entry) * self.qty if self.side == "LONG" \
-              else (self.entry - exit_price) * self.qty
+        pnl = (
+            (exit_price - self.entry) * self.qty
+            if self.side == "LONG"
+            else (self.entry - exit_price) * self.qty
+        )
 
         store_trade(
             entry_date = self.entry_dt,

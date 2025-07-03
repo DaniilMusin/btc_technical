@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter
-from datetime import datetime, timedelta
+
 import warnings
 warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)  # (3) Точечная фильтрация
 import logging

@@ -1,4 +1,8 @@
-import hmac, hashlib, time, os, httpx, asyncio
+import hmac
+import hashlib
+import time
+import os
+import httpx
 from loguru import logger
 from dotenv import load_dotenv
 
@@ -12,13 +16,15 @@ class MexcBroker:
 
     def __init__(self, testnet: bool = True):
         self.testnet = testnet
-        self.key     = os.getenv("MEXC_API_KEY")
-        self.secret  = os.getenv("MEXC_API_SECRET", "").encode()
-        self.base    = "https://api.mexc.com"
+        self.key = os.getenv("MEXC_API_KEY")
+        self.secret = os.getenv("MEXC_API_SECRET", "").encode()
+        self.base = "https://api.mexc.com"
         self._client = httpx.AsyncClient(timeout=10.0)
 
         if testnet:
-            logger.warning("MEXC Broker in DRY‑RUN / TESTNET mode – сделки НЕ отправляются")
+            logger.warning(
+                "MEXC Broker in DRY‑RUN / TESTNET mode – сделки НЕ отправляются"
+            )
 
     # ---------- helpers ---------- #
     def _sign(self, params: dict) -> dict:
