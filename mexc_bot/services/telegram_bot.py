@@ -15,22 +15,34 @@ from core.db import stats as db_stats, Session, Trade
 
 load_dotenv()
 TG_TOKEN = os.getenv("TG_TOKEN")
-TG_CHAT_ID = int(os.getenv("TG_CHAT_ID"))
+TG_CHAT_ID = os.getenv("TG_CHAT_ID")
+if TG_CHAT_ID is not None:
+    try:
+        TG_CHAT_ID = int(TG_CHAT_ID)
+    except ValueError:
+        TG_CHAT_ID = None
 
 
 class TgNotifier:
     def __init__(self):
-        self.app = ApplicationBuilder().token(TG_TOKEN).build()
-        self.app.add_handler(CommandHandler("stats", self.cmd_stats))
-        self.app.add_handler(CommandHandler("last",  self.cmd_last))
+        if TG_TOKEN:
+            self.app = ApplicationBuilder().token(TG_TOKEN).build()
+            self.app.add_handler(CommandHandler("stats", self.cmd_stats))
+            self.app.add_handler(CommandHandler("last",  self.cmd_last))
+        else:
+            self.app = None
 
     async def start(self):
+        if self.app is None:
+            logger.info("Telegram bot disabled")
+            return
         await self.app.initialize()
         await self.app.start()
         logger.info("Telegram bot started")
 
     async def stop(self):
-        await self.app.stop()
+        if self.app:
+            await self.app.stop()
 
     # -------------- commands -------------- #
     async def cmd_stats(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -68,6 +80,8 @@ class TgNotifier:
 
     # -------------- notifications -------------- #
     async def notify(self, text: str):
+        if not self.app or TG_CHAT_ID is None:
+            return
         try:
             await self.app.bot.send_message(
                 TG_CHAT_ID,
