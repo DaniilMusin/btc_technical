@@ -2,7 +2,7 @@ import os
 import time
 import requests
 
-TG_TOKEN = os.getenv("TG_BOT_TOKEN")
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 TG_CHAT = os.getenv("TG_CHAT_ID")
 
 def tg_send(
@@ -11,9 +11,9 @@ def tg_send(
     silent: bool = False,
 ) -> None:
     """Send a simple Telegram message if credentials are set."""
-    if not (TG_TOKEN and TG_CHAT):
+    if not (TG_BOT_TOKEN and TG_CHAT):
         return
-    url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TG_CHAT,
         "text": text,
