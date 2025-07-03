@@ -22,11 +22,11 @@ from .plots import (
     plot_equity_curve as plot_equity_curve_func,
     plot_regime_performance as plot_regime_performance_func,
 )
+from .broker import SINGLE_SIDE_FEE
 
 # Магические числа
-COMMISSION_RATE_ENTRY = 0.00035  # 0.035% комиссия при входе
-# Комиссия при закрытии позиции. Начисляется один раз в \_close_position
-COMMISSION_RATE_EXIT = 0.00035   # 0.035% комиссия при выходе
+COMMISSION_RATE_ENTRY = SINGLE_SIDE_FEE  # 0.035% комиссия при входе
+# SINGLE_SIDE_FEE применяем как ставку комиссии на выход
 SLIPPAGE_PCT = 0.05       # 0.05% по умолчанию
 MIN_BALANCE = 1000
 MIN_POSITION = 100
@@ -1724,7 +1724,7 @@ class BalancedAdaptiveStrategy:
 
         # Entry commission is already deducted when the position is opened,
         # so here we only account for the exit commission and slippage.
-        commission_exit = position_size * exit_price * COMMISSION_RATE_EXIT
+        commission = position_size * exit_price * SINGLE_SIDE_FEE
         slippage = position_size * exit_price * (self.slippage_pct / 100)
 
         if position_type == 'LONG':
@@ -1732,7 +1732,7 @@ class BalancedAdaptiveStrategy:
         else:
             gross_pnl = (entry_price - exit_price) * position_size
 
-        net_pnl = gross_pnl - commission_exit - slippage
+        net_pnl = gross_pnl - commission - slippage
         return net_pnl
 
 
