@@ -135,7 +135,10 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
             risk_pct *= 0.8 if wr < 0.4 else (1.2 if wr > 0.6 else 1.0)
 
         risk_usd = balance * risk_pct
-        price_risk_pct = abs(price-sl) / price if price else 0.001
+        if price and price != sl:
+            price_risk_pct = abs(price - sl) / price
+        else:
+            price_risk_pct = 0.001
         qty = risk_usd / (price * price_risk_pct)
         return max(qty, 0.0001)         # минимальный лот BTC
 

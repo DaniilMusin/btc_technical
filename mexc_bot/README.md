@@ -17,6 +17,8 @@ docker compose up --build -d
 задать `BINGX_TESTNET=true` — это внутренний алиас `USE_TESTNET`, включающий
 dry-run режим. Чтобы дополнительно сохранять свечи в архив `data/ohlc_archive.csv`,
 выставьте `ARCHIVE_CSV=true` в `.env`.
+Для фьючерсных ордеров BingX поддерживаются переменные `BINGX_MARGIN_MODE` и
+`BINGX_LEVERAGE`. По умолчанию используется изолированная маржа и плечо 3x.
 
 ## Tested with Python 3.11 / 3.10
 
@@ -38,6 +40,12 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 
 Стратегия протестирована на наборе данных `btc_1d_data_2018_to_2025.csv`. Результаты
 подтвердили корректность работы `run_backtest()` и всего проекта в целом.
+
+## Комиссия
+
+Комиссии на вход и выход рассчитываются отдельно. Константы
+`COMMISSION_RATE_ENTRY` и `COMMISSION_RATE_EXIT` по умолчанию равны `0.00035`
+каждая, что в сумме соответствует прежнему уровню 0.07% за полный круг.
 
 ## Telegram notifications
 
