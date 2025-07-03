@@ -80,7 +80,7 @@ class StreamingDataFeed:
                     k = msg.get("data") or msg
                     if not k:
                         continue
-                    if k.get("event") != "kline" and "c" not in k:
+                    if "c" not in k:
                         continue
 
                     candle = {
