@@ -76,8 +76,9 @@ tg_send("Test OK ✅")
 
 ## Pre-commit
 
+Файл `.pre-commit-config.yaml` задаёт основные хуки `black`, `ruff`, `mypy` и `pytest`.
 Для автоматического форматирования кода и запуска статических проверок
-установите `pre-commit` и активируйте хуки:
+установите `pre-commit` и активируйте их:
 
 ```bash
 pip install pre-commit
