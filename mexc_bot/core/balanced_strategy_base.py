@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 
 import logging
+from loguru import logger
+import os
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import warnings
@@ -30,6 +32,8 @@ MIN_BALANCE = 1000
 MIN_POSITION = 100
 
 logging.basicConfig(level=logging.INFO)
+LOG_FILE = os.getenv("LOG_FILE", "mexc_bot.log")
+logger.add(LOG_FILE, rotation="1 MB")
 
 @dataclass
 class StrategyConfig:
@@ -558,7 +562,7 @@ class BalancedAdaptiveStrategy:
                  self.data['Higher_TF_Bearish'].astype(int)) / 3
             )
         except Exception as e:
-            print(f"Error in multi-timeframe calculation: {e}")
+            logger.error("Error in multi-timeframe calculation: %s", e)
             self.data['MTF_Bull_Strength'] = self.data['Higher_TF_Bullish'].astype(int)
             self.data['MTF_Bear_Strength'] = self.data['Higher_TF_Bearish'].astype(int)
     
@@ -1426,7 +1430,7 @@ class BalancedAdaptiveStrategy:
                     f"{int(24*60/len(self.data))}H"
                 ).last().reindex(self.data.index, method='ffill')
             except Exception as e:
-                print(f"Error loading benchmark data: {e}")
+                logger.error("Error loading benchmark data: %s", e)
                 self.data['Benchmark_Return'] = self.data['Close'].pct_change()
         
         if hasattr(self, 'backtest_results') and 'equity' in self.backtest_results.columns:
@@ -1442,19 +1446,19 @@ class BalancedAdaptiveStrategy:
                 index=[f'lag_{i}' for i in range(1, 11)]
             )
             
-            print("\n===== CORRELATION METRICS =====")
+            logger.info("\n===== CORRELATION METRICS =====")
             avg_corr = rolling_corr.dropna().mean()  # (2) Исправление NaN
-            print(f"Average correlation with BTC price: {avg_corr:.4f}")
-            print("Strategy autocorrelation:")
+            logger.info("Average correlation with BTC price: %.4f", avg_corr)
+            logger.info("Strategy autocorrelation:")
             for lag, value in autocorr.items():
-                print(f"  {lag}: {value:.4f}")
+                logger.info("  %s: %.4f", lag, value)
             
             if abs(avg_corr) < 0.3:
-                print("Strategy shows low correlation with BTC price, suggesting market-neutral characteristics")
+                logger.info("Strategy shows low correlation with BTC price, suggesting market-neutral characteristics")
             elif avg_corr > 0.7:
-                print("Strategy is highly correlated with BTC price, may struggle in bear markets")
+                logger.info("Strategy is highly correlated with BTC price, may struggle in bear markets")
             elif avg_corr < -0.7:
-                print("Strategy is highly negatively correlated with BTC price, may struggle in bull markets")
+                logger.info("Strategy is highly negatively correlated with BTC price, may struggle in bull markets")
 
     def run_backtest(self) -> Optional[pd.DataFrame]:
         """Run the backtest and return results DataFrame"""
@@ -1479,9 +1483,9 @@ class BalancedAdaptiveStrategy:
     
     def analyze_results(self):
         if self.backtest_results is None or len(self.trade_df) == 0:
-            print("No data for analysis. Run backtest first.")
+            logger.warning("No data for analysis. Run backtest first.")
             return None
-        print("\n===== BACKTEST RESULTS =====")
+        logger.info("\n===== BACKTEST RESULTS =====")
         trades = self.trade_df[self.trade_df['pnl'].notna()].copy()
         initial_balance = self.initial_balance
         final_balance = self.backtest_results['balance'].iloc[-1]
@@ -1541,30 +1545,30 @@ class BalancedAdaptiveStrategy:
         exit_reason_counts = trades['reason'].value_counts()
         hour_stats = self.analyze_hour_performance()
         day_stats = self.analyze_day_performance()
-        print(f"Initial Balance: ${initial_balance:.2f}")
-        print(f"Final Balance: ${final_balance:.2f}")
-        print(f"Total Return: {total_return:.2f}%")
-        print(f"Monthly Return: {monthly_return:.2f}%")
-        print(f"Maximum Drawdown: {max_drawdown:.2f}%")
-        print(f"Total Trades: {total_trades}")
-        print(f"Profitable Trades: {profitable_trades} ({win_rate:.2f}%)")
-        print(f"Losing Trades: {losing_trades} ({100 - win_rate:.2f}%)")
-        print(f"Average Profit: ${avg_profit:.2f}")
-        print(f"Average Loss: ${avg_loss:.2f}")
-        print(f"Profit Factor: {profit_factor:.2f}")
-        print(f"Sharpe Ratio: {sharpe_ratio:.2f}")
-        print(f"Sortino Ratio: {sortino_ratio:.2f}")
-        print(f"Median Trade Duration: {median_duration_hours:.2f} hours")
-        print("\n===== STATISTICS BY TRADE TYPE =====")
-        print(f"Long Trades: {long_trades} (Win Rate: {long_win_rate:.2f}%)")
-        print(f"Short Trades: {short_trades} (Win Rate: {short_win_rate:.2f}%)")
-        print(f"Average P&L Long Trade: ${avg_long_pnl:.2f}")
-        print(f"Average P&L Short Trade: ${avg_short_pnl:.2f}")
-        print(f"Total P&L (Long): ${long_contribution:.2f}")
-        print(f"Total P&L (Short): ${short_contribution:.2f}")
-        print("\n===== EXIT REASON DISTRIBUTION =====")
+        logger.info("Initial Balance: $%.2f", initial_balance)
+        logger.info("Final Balance: $%.2f", final_balance)
+        logger.info("Total Return: %.2f%%", total_return)
+        logger.info("Monthly Return: %.2f%%", monthly_return)
+        logger.info("Maximum Drawdown: %.2f%%", max_drawdown)
+        logger.info("Total Trades: %d", total_trades)
+        logger.info("Profitable Trades: %d (%.2f%%)", profitable_trades, win_rate)
+        logger.info("Losing Trades: %d (%.2f%%)", losing_trades, 100 - win_rate)
+        logger.info("Average Profit: $%.2f", avg_profit)
+        logger.info("Average Loss: $%.2f", avg_loss)
+        logger.info("Profit Factor: %.2f", profit_factor)
+        logger.info("Sharpe Ratio: %.2f", sharpe_ratio)
+        logger.info("Sortino Ratio: %.2f", sortino_ratio)
+        logger.info("Median Trade Duration: %.2f hours", median_duration_hours)
+        logger.info("\n===== STATISTICS BY TRADE TYPE =====")
+        logger.info("Long Trades: %d (Win Rate: %.2f%%)", long_trades, long_win_rate)
+        logger.info("Short Trades: %d (Win Rate: %.2f%%)", short_trades, short_win_rate)
+        logger.info("Average P&L Long Trade: $%.2f", avg_long_pnl)
+        logger.info("Average P&L Short Trade: $%.2f", avg_short_pnl)
+        logger.info("Total P&L (Long): $%.2f", long_contribution)
+        logger.info("Total P&L (Short): $%.2f", short_contribution)
+        logger.info("\n===== EXIT REASON DISTRIBUTION =====")
         for reason, count in exit_reason_counts.items():
-            print(f"{reason}: {count}")
+            logger.info("%s: %s", reason, count)
         self.backtest_results['year'] = pd.to_datetime(self.backtest_results['date']).dt.year
         yearly_performance = {}
         for year in self.backtest_results['year'].unique():
@@ -1573,11 +1577,11 @@ class BalancedAdaptiveStrategy:
             end_balance_yr = year_data['balance'].iloc[-1]
             yearly_return = ((end_balance_yr / start_balance_yr) - 1) * 100
             yearly_performance[year] = yearly_return
-        print("\n===== YEARLY PERFORMANCE =====")
+        logger.info("\n===== YEARLY PERFORMANCE =====")
         for year, yearly_return in yearly_performance.items():
-            print(f"{year}: {yearly_return:.2f}%")
+            logger.info("%s: %.2f%%", year, yearly_return)
         if 'market_regime' in trades.columns:
-            print("\n===== PERFORMANCE BY MARKET REGIME =====")
+            logger.info("\n===== PERFORMANCE BY MARKET REGIME =====")
             regime_stats = trades.groupby('market_regime').agg({
                 'pnl': ['count', 'mean', 'sum'],
                 'position': 'count'
@@ -1592,9 +1596,12 @@ class BalancedAdaptiveStrategy:
                 regime_win_rates.append(rw * 100)
             regime_stats['win_rate'] = regime_win_rates
             for _, row in regime_stats.iterrows():
-                print(f"{row['regime']}: Win Rate {row['win_rate']:.2f}%, Avg P&L ${row['avg_pnl']:.2f}, Total P&L ${row['total_pnl']:.2f}, Trades: {row['num_trades']}")
+                logger.info(
+                    "%s: Win Rate %.2f%%, Avg P&L $%.2f, Total P&L $%.2f, Trades: %s",
+                    row['regime'], row['win_rate'], row['avg_pnl'], row['total_pnl'], row['num_trades']
+                )
         if 'market_health' in trades.columns and not trades['market_health'].isnull().all():
-            print("\n===== PERFORMANCE BY MARKET HEALTH =====")
+            logger.info("\n===== PERFORMANCE BY MARKET HEALTH =====")
             trades['health_bin'] = pd.cut(
                 trades['market_health'].fillna(50),
                 bins=[0, 20, 40, 60, 80, 100],
@@ -1614,7 +1621,10 @@ class BalancedAdaptiveStrategy:
                 hw_rates.append(wr * 100)
             health_stats['win_rate'] = hw_rates
             for _, row in health_stats.iterrows():
-                print(f"{row['health_range']}: Win Rate {row['win_rate']:.2f}%, Avg P&L ${row['avg_pnl']:.2f}, Total P&L ${row['total_pnl']:.2f}, Trades: {row['num_trades']}")
+                logger.info(
+                    "%s: Win Rate %.2f%%, Avg P&L $%.2f, Total P&L $%.2f, Trades: %s",
+                    row['health_range'], row['win_rate'], row['avg_pnl'], row['total_pnl'], row['num_trades']
+                )
         if 'pyramid_entries' in trades.columns:
             pyramid_trades = trades[trades['pyramid_entries'] > 0].copy()
             non_pyramid_trades = trades[trades['pyramid_entries'] == 0].copy()
@@ -1624,27 +1634,39 @@ class BalancedAdaptiveStrategy:
                                     if len(non_pyramid_trades) > 0 else 0)
             pyramid_profit = pyramid_trades['pnl'].sum()
             non_pyramid_profit = non_pyramid_trades['pnl'].sum()
-            print("\n===== PYRAMIDING EFFECT =====")
-            print(f"Trades with Pyramiding: {len(pyramid_trades)} (Win Rate: {pyramid_win_rate:.2f}%)")
-            print(f"Trades without Pyramiding: {len(non_pyramid_trades)} (Win Rate: {non_pyramid_win_rate:.2f}%)")
-            print(f"P&L with Pyramiding: ${pyramid_profit:.2f}")
-            print(f"P&L without Pyramiding: ${non_pyramid_profit:.2f}")
+            logger.info("\n===== PYRAMIDING EFFECT =====")
+            logger.info(
+                "Trades with Pyramiding: %d (Win Rate: %.2f%%)",
+                len(pyramid_trades), pyramid_win_rate
+            )
+            logger.info(
+                "Trades without Pyramiding: %d (Win Rate: %.2f%%)",
+                len(non_pyramid_trades), non_pyramid_win_rate
+            )
+            logger.info("P&L with Pyramiding: $%.2f", pyramid_profit)
+            logger.info("P&L without Pyramiding: $%.2f", non_pyramid_profit)
         if hour_stats is not None:
-            print("\n===== PERFORMANCE BY TRADING HOUR =====")
+            logger.info("\n===== PERFORMANCE BY TRADING HOUR =====")
             best_hours = hour_stats.sort_values('win_rate', ascending=False).head(5)
-            print("Best 5 Trading Hours (by win rate):")
+            logger.info("Best 5 Trading Hours (by win rate):")
             for _, row in best_hours.iterrows():
-                print(f"Hour {row['hour']}: Win Rate {row['win_rate']*100:.2f}%, P&L ${row['total_pnl']:.2f}, Trades: {row['num_trades']}")
+                logger.info(
+                    "Hour %s: Win Rate %.2f%%, P&L $%.2f, Trades: %s",
+                    row['hour'], row['win_rate']*100, row['total_pnl'], row['num_trades']
+                )
         if day_stats is not None:
-            print("\n===== PERFORMANCE BY DAY OF WEEK =====")
+            logger.info("\n===== PERFORMANCE BY DAY OF WEEK =====")
             for _, row in day_stats.sort_values('win_rate', ascending=False).iterrows():
-                print(f"{row['day']}: Win Rate {row['win_rate']*100:.2f}%, P&L ${row['total_pnl']:.2f}, Trades: {row['num_trades']}")
+                logger.info(
+                    "%s: Win Rate %.2f%%, P&L $%.2f, Trades: %s",
+                    row['day'], row['win_rate']*100, row['total_pnl'], row['num_trades']
+                )
         if 'leverage' in trades.columns:
             avg_leverage = trades['leverage'].mean()
-            print(f"\nAverage Used Leverage: {avg_leverage:.2f}x")
+            logger.info("\nAverage Used Leverage: %.2fx", avg_leverage)
         if 'risk_per_trade' in trades.columns:
             avg_risk = trades['risk_per_trade'].mean() * 100
-            print(f"Average Risk per Trade: {avg_risk:.2f}%")
+            logger.info("Average Risk per Trade: %.2f%%", avg_risk)
         self.calculate_correlation_metrics()
         stats = {
             'initial_balance': initial_balance,
@@ -1680,7 +1702,7 @@ class BalancedAdaptiveStrategy:
                 'max_pyramid_entries': [2, 3, 4]
             }
         
-        print(f"Starting parameter optimization with {num_trials} trials...")
+        logger.info("Starting parameter optimization with %d trials...", num_trials)
         
         best_profit = -float('inf')
         best_params = None
@@ -1705,17 +1727,23 @@ class BalancedAdaptiveStrategy:
                 best_profit = profit
                 best_params = trial_params.copy()
                 best_stats = stats.copy()
-                print(f"New best profit: ${best_profit:.2f} (Trial {trial+1}/{num_trials})")
+                logger.info(
+                    "New best profit: $%.2f (Trial %d/%d)",
+                    best_profit, trial + 1, num_trials
+                )
             else:
-                print(f"Trial {trial+1}/{num_trials} - Profit: ${profit:.2f} (Best: ${best_profit:.2f})")
+                logger.info(
+                    "Trial %d/%d - Profit: $%.2f (Best: $%.2f)",
+                    trial + 1, num_trials, profit, best_profit
+                )
         
         self.optimized_params = best_params
         
-        print("\n===== OPTIMIZATION RESULTS =====")
-        print(f"Best Profit: ${best_profit:.2f}")
-        print("Best Parameters:")
+        logger.info("\n===== OPTIMIZATION RESULTS =====")
+        logger.info("Best Profit: $%.2f", best_profit)
+        logger.info("Best Parameters:")
         for param, value in best_params.items():
-            print(f"  {param}: {value}")
+            logger.info("  %s: %s", param, value)
         
         return best_params, best_stats
 
@@ -1767,13 +1795,13 @@ def main():
     csv_files = [f for f in os.listdir(base_dir) if f.endswith('.csv')]
     
     if not csv_files:
-        print(f"No CSV files found in {base_dir}. Please ensure your data file is in this directory.")
+        logger.error("No CSV files found in %s. Please ensure your data file is in this directory.", base_dir)
         return
     
     data_file = csv_files[0]
     data_path = os.path.join(base_dir, data_file)
     
-    print(f"Using data file: {data_path}")
+    logger.info("Using data file: %s", data_path)
     
     strategy = BalancedAdaptiveStrategy(
         data_path=data_path,
