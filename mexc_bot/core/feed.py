@@ -84,13 +84,15 @@ class StreamingDataFeed:
                 try:
                     async with websockets.connect(url) as ws:
                         logger.info(f"Connected to BingX WebSocket for {self.symbol}")
-                        await ws.send(json.dumps({"type": "subscribe", "topic": topic}))
+                        payload = {"event": "subscribe", "topic": topic,
+                                  "params": {"binary": "false"}}
+                        await ws.send(json.dumps(payload))
                         async for raw in ws:
                             msg = json.loads(raw)
                             k = msg.get("data") or msg
                             if not k:
                                 continue
-                            if k.get("event") != "kline" and "c" not in k:
+                            if "c" not in k:        # BingX kline payload
                                 continue
 
                             candle = {
