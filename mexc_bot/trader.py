@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from core.feed import StreamingDataFeed
-from core.broker import MexcBroker, BingxBroker
+from core.broker import BingxBroker
 from core.strategy import BalancedAdaptiveStrategyLive
 from core.db import init_db
 from services.telegram_bot import TgNotifier
@@ -17,11 +17,7 @@ class LiveTrader:
 
         # modules
         self.feed     = StreamingDataFeed(self.symbol, self.interval)
-        exchange = os.getenv("EXCHANGE", "MEXC").upper()
-        if exchange == "BINGX":
-            self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
-        else:
-            self.broker = MexcBroker(testnet=self.testnet)
+        self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
         self.strategy = BalancedAdaptiveStrategyLive(
             initial_balance=float(os.getenv("INITIAL_BALANCE",1000))
         )
