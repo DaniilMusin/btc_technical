@@ -70,17 +70,19 @@ class StreamingDataFeed:
                 await on_candle(self.df.copy())
         else:
             topic = f"kline_{self.interval}_{self.symbol.lower()}"
-            payload = {"event": "subscribe", "topic": topic, "params": {"binary": "false"}}
+            url = "wss://open-api.bingx.com/market"
+
             while True:
                 try:
-                    async with websockets.connect("wss://open-api.bingx.com/market") as ws:
-                        await ws.send(json.dumps(payload))
+                    async with websockets.connect(url) as ws:
+                        logger.info(f"Connected to BingX WebSocket for {self.symbol}")
+                        await ws.send(json.dumps({"type": "subscribe", "topic": topic}))
                         async for raw in ws:
                             msg = json.loads(raw)
                             k = msg.get("data") or msg
                             if not k:
                                 continue
-                            if "c" not in k:
+                            if k.get("event") != "kline" and "c" not in k:
                                 continue
 
                             candle = {
@@ -112,9 +114,10 @@ class StreamingDataFeed:
                                 )
 
                             await on_candle(self.df.copy())
-                except websockets.exceptions.ConnectionClosed as e:
-                    logger.info("Websocket closed: %s", e)
+
+                except (websockets.ConnectionClosedError, websockets.ConnectionClosedOK) as e:
+                    logger.error(f"BingX WebSocket connection closed: {e}. Reconnecting in 5 seconds...")
+                    await asyncio.sleep(5)
                 except Exception as e:
-                    logger.error("Websocket error: %s", e)
-                logger.info("Reconnecting in 5s...")
-                await asyncio.sleep(5)
+                    logger.error(f"An unexpected error in feed: {e}. Reconnecting in 10 seconds...")
+                    await asyncio.sleep(10)

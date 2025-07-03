@@ -2542,13 +2542,18 @@ class BalancedAdaptiveStrategy:
 
     def _close_position(self, position_type, position_size, entry_price, exit_price):
         """Calculate realized PnL with commission and slippage for LONG or SHORT"""
-        commission = position_size * COMMISSION_RATE_EXIT
-        slippage = position_size * self.slippage_pct / 100
+
+        commission_entry = position_size * entry_price * COMMISSION_RATE_ENTRY
+        commission_exit = position_size * exit_price * COMMISSION_RATE_EXIT
+        slippage = position_size * exit_price * (self.slippage_pct / 100)
+
         if position_type == 'LONG':
-            pnl = position_size * ((exit_price / entry_price) - 1) - (commission + slippage)
+            gross_pnl = (exit_price - entry_price) * position_size
         else:
-            pnl = position_size * (1 - (exit_price / entry_price)) - (commission + slippage)
-        return pnl
+            gross_pnl = (entry_price - exit_price) * position_size
+
+        net_pnl = gross_pnl - commission_entry - commission_exit - slippage
+        return net_pnl
 
 
 def main():
