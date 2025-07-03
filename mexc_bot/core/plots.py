@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter
 import pandas as pd
+from loguru import logger
 
 
 def plot_equity_curve(strategy):
     if strategy.backtest_results is None:
-        print("No backtest results available. Run backtest first.")
+        logger.warning("No backtest results available. Run backtest first.")
         return
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 12), gridspec_kw={'height_ratios': [3, 1, 1]})
     ax1.plot(strategy.backtest_results['date'], strategy.backtest_results['equity'], label='Equity', color='blue')
@@ -97,7 +98,7 @@ def plot_equity_curve(strategy):
 
 def plot_regime_performance(strategy):
     if not hasattr(strategy, 'trade_df') or len(strategy.trade_df) == 0 or 'market_regime' not in strategy.trade_df.columns:
-        print("No regime data available.")
+        logger.warning("No regime data available.")
         return
     regime_stats = strategy.trade_df.groupby('market_regime').agg({
         'pnl': ['count', 'mean', 'sum'],
