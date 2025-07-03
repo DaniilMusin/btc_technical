@@ -3,7 +3,7 @@
     /stats – общая статистика
     /last  – последняя сделка
 """
-import os, asyncio, datetime as dt
+import os
 from dotenv import load_dotenv
 from loguru import logger
 from telegram import Update
@@ -14,8 +14,9 @@ from telegram.ext import (
 from core.db import stats as db_stats, Session, Trade
 
 load_dotenv()
-TG_TOKEN   = os.getenv("TG_TOKEN")
+TG_TOKEN = os.getenv("TG_TOKEN")
 TG_CHAT_ID = int(os.getenv("TG_CHAT_ID"))
+
 
 class TgNotifier:
     def __init__(self):
@@ -40,13 +41,22 @@ class TgNotifier:
             f"Win‑rate: {s['win_rate']:.1f}%\n"
             f"PNL: {s['pnl']:.2f}"
         )
-        await ctx.bot.send_message(upd.effective_chat.id, text, parse_mode=ParseMode.MARKDOWN)
+        await ctx.bot.send_message(
+            upd.effective_chat.id,
+            text,
+            parse_mode=ParseMode.MARKDOWN,
+        )
 
     async def cmd_last(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
         with Session() as sess:
-            t: Trade | None = sess.query(Trade).order_by(Trade.id.desc()).first()
+            t: Trade | None = (
+                sess.query(Trade).order_by(Trade.id.desc()).first()
+            )
         if not t:
-            await ctx.bot.send_message(upd.effective_chat.id, "Сделок пока нет.")
+            await ctx.bot.send_message(
+                upd.effective_chat.id,
+                "Сделок пока нет."
+            )
             return
         text = (
             f"{t.entry_date:%Y-%m-%d %H:%M}  →  {t.exit_date:%Y-%m-%d %H:%M}\n"
@@ -59,6 +69,10 @@ class TgNotifier:
     # -------------- notifications -------------- #
     async def notify(self, text: str):
         try:
-            await self.app.bot.send_message(TG_CHAT_ID, text, parse_mode=ParseMode.MARKDOWN)
+            await self.app.bot.send_message(
+                TG_CHAT_ID,
+                text,
+                parse_mode=ParseMode.MARKDOWN,
+            )
         except Exception as e:
             logger.error("TG notify failed: %s", e)

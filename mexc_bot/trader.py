@@ -30,16 +30,22 @@ class LiveTrader:
         decision = self.strategy.on_new_candle(df)
 
         # ---------- OPEN ---------- #
-        if decision["action"] in ("BUY","SELL") and self.strategy.side is None:
-            qty = self.strategy.calc_qty(self.balance, df['Close'].iloc[-1], decision["sl"])
+        if decision["action"] in ("BUY", "SELL") and self.strategy.side is None:
+            qty = self.strategy.calc_qty(
+                self.balance,
+                df["Close"].iloc[-1],
+                decision["sl"],
+            )
             qty = math.floor(qty*1e6)/1e6
             if qty < 0.0001:
                 logger.warning("Qty too small, skip")
                 return
 
-            side = "BUY" if decision["action"]=="BUY" else "SELL"
+            side = "BUY" if decision["action"] == "BUY" else "SELL"
             resp = await self.broker.place_market(self.symbol, side, qty)
-            fill_price = float(resp["fills"][0]["price"]) or df['Close'].iloc[-1]
+            fill_price = (
+                float(resp["fills"][0]["price"]) or df["Close"].iloc[-1]
+            )
 
             self.strategy.open_position(
                 "LONG" if side=="BUY" else "SHORT",
@@ -52,13 +58,21 @@ class LiveTrader:
             return
 
         # ---------- EXIT ---------- #
-        if decision["action"]=="EXIT" and self.strategy.side:
-            close_side = "SELL" if self.strategy.side=="LONG" else "BUY"
+        if decision["action"] == "EXIT" and self.strategy.side:
+            close_side = "SELL" if self.strategy.side == "LONG" else "BUY"
             resp = await self.broker.place_market(
-                self.symbol, close_side, self.strategy.qty
+                self.symbol,
+                close_side,
+                self.strategy.qty,
             )
-            exit_price = float(resp["fills"][0]["price"]) or df['Close'].iloc[-1]
-            self.strategy.close_position(exit_price, ts, reason="SL/TP or signal")
+            exit_price = (
+                float(resp["fills"][0]["price"]) or df["Close"].iloc[-1]
+            )
+            self.strategy.close_position(
+                exit_price,
+                ts,
+                reason="SL/TP or signal",
+            )
             await self.tg.notify(f"✅ *CLOSE* PNL posted")
             return
 
