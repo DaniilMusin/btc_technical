@@ -1,5 +1,6 @@
-import asyncio, os
-from trader import LiveTrader
+import asyncio
+import os
+from core.trader import LiveTrader
 
 if __name__ == "__main__":
     asyncio.run(
