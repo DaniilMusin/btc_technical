@@ -9,12 +9,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Unified commission fee for a single trade side
+SINGLE_SIDE_FEE = 0.00035
+
 
 class BaseBroker:
     """Abstract broker with basic helpers and dry-run support."""
 
-    COMMISSION_RATE_ENTRY = 0.00035
-    COMMISSION_RATE_EXIT = 0.00035
+    COMMISSION_RATE_ENTRY = SINGLE_SIDE_FEE
+    COMMISSION_RATE_EXIT = SINGLE_SIDE_FEE
 
     def __init__(self, testnet: bool = True):
         self.testnet = testnet
