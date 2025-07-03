@@ -1,15 +1,10 @@
-import pandas as pd 
+import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from matplotlib.ticker import FuncFormatter
 
-import warnings
-warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)  # (3) Точечная фильтрация
 import logging
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
-from telegram_utils import tg_send
+import warnings
 from .indicators import (
     calculate_ema,
     calculate_rsi,
@@ -17,16 +12,19 @@ from .indicators import (
     calculate_adx,
     calculate_macd,
 )
+try:
+    from telegram_utils import tg_send
+except Exception:  # pragma: no cover - optional telegram
+    tg_send = None
 from .backtest import run_backtest as backtest_run
 from .plots import (
     plot_equity_curve as plot_equity_curve_func,
     plot_regime_performance as plot_regime_performance_func,
 )
+from .constants import COMMISSION_RATE_EXIT
+warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)  # (3) Точечная фильтрация
 
 # Магические числа
-COMMISSION_RATE_ENTRY = 0.00035  # 0.035% комиссия при входе
-# Комиссия при закрытии позиции. Начисляется один раз в \_close_position
-COMMISSION_RATE_EXIT = 0.00035   # 0.035% комиссия при выходе
 SLIPPAGE_PCT = 0.05       # 0.05% по умолчанию
 MIN_BALANCE = 1000
 MIN_POSITION = 100
@@ -1284,6 +1282,16 @@ class BalancedAdaptiveStrategy:
         elif position_size == min_pos:
             warnings.warn(f"Position size {position_size:.2f} < min allowed {min_pos:.2f}. Risk per trade может быть превышен!")
         return position_size
+
+    def calculate_position_size(self, balance, stop_loss_price, entry_price):
+        """Compatibility wrapper used by backtests"""
+        return self.adaptive_position_sizing(
+            balance,
+            self.base_risk_per_trade,
+            entry_price,
+            stop_loss_price,
+            self.max_leverage,
+        )
     
     def is_optimal_trading_time(self, ts):
         optimal_hours = [9, 10, 13, 14, 15, 16]
@@ -1713,10 +1721,14 @@ class BalancedAdaptiveStrategy:
 
     def quality_long_signal(self, current):
         score = 0
-        if current['Higher_TF_Bullish']: score += 1
-        if current['ADX'] > 25: score += 1
-        if current['Volume_Ratio'] > 1.3: score += 1
-        if current['RSI'] > 45: score += 1
+        if current['Higher_TF_Bullish']:
+            score += 1
+        if current['ADX'] > 25:
+            score += 1
+        if current['Volume_Ratio'] > 1.3:
+            score += 1
+        if current['RSI'] > 45:
+            score += 1
         return score >= 3
 
     def _close_position(self, position_type, position_size, entry_price, exit_price):
@@ -1785,7 +1797,11 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        import traceback, sys
+        import traceback
+        import sys
         err = "".join(traceback.format_exception(*sys.exc_info())[-5:])
-        tg_send(f"\u26A0\ufe0f *\u0411\u043E\u0442 \u0443\u043F\u0430\u043B*\n`{e}`\n```{err}```")
+        if tg_send:
+            tg_send(
+                f"\u26A0\ufe0f *\u0411\u043E\u0442 \u0443\u043F\u0430\u043B*\n`{e}`\n```{err}```"
+            )
         raise

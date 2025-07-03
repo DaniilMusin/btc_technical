@@ -3,8 +3,7 @@ from typing import Optional
 import logging
 import pandas as pd
 
-COMMISSION_RATE_ENTRY = 0.00035
-COMMISSION_RATE_EXIT = 0.00035
+from .constants import COMMISSION_RATE_ENTRY, COMMISSION_RATE_EXIT
 
 
 def run_backtest(strategy) -> Optional[pd.DataFrame]:
@@ -46,7 +45,6 @@ def run_backtest(strategy) -> Optional[pd.DataFrame]:
             max_trade_price = max(max_trade_price, current['High'])
             min_trade_price = min(min_trade_price, current['Low'])
             trade_age_hours = (current.name - entry_date).total_seconds() / 3600
-            higher_tf_bullish = current['Higher_TF_Bullish']
             if position == 1:
                 optimal_leverage = strategy.calculate_optimal_leverage(current, 'LONG', strategy.max_leverage)
                 unrealized_pnl_pct = (current['Close'] / entry_price) - 1
