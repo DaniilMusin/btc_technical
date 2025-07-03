@@ -13,7 +13,8 @@ load_dotenv()
 class BaseBroker:
     """Abstract broker with basic helpers and dry-run support."""
 
-    COMMISSION_RATE = 0.0007
+    COMMISSION_RATE_ENTRY = 0.00035
+    COMMISSION_RATE_EXIT = 0.00035
 
     def __init__(self, testnet: bool = True):
         self.testnet = testnet
