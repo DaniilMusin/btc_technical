@@ -48,6 +48,7 @@ Dockerfile и `docker-compose.yml` уже используют образ Python
 При закрытии комиссия берётся как `position_size * exit_price * COMMISSION_RATE_EXIT` и
 вычитается из расчёта PnL. Оба коэффициента по умолчанию равны `0.00035`,
 что в сумме соответствует прежнему уровню 0.07% за полный круг.
+Значения задаются в `mexc_bot.core.constants` и используются в стратегии и при бэктестах.
 
 ## Telegram notifications
 
