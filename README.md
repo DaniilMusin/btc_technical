@@ -8,6 +8,7 @@
 
 ```bash
 cp .env.example .env
+# для BingX укажите `EXCHANGE=BINGX`
 # заполните реальные ключи
 
 docker compose up --build -d
