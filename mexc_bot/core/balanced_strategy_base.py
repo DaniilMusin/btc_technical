@@ -1990,7 +1990,7 @@ class BalancedAdaptiveStrategy:
             if position == 1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * ((current['Close'] / entry_price) - 1)
-                commission = partial_size * 0.00035  # half of round-trip
+                commission = partial_size * (COMMISSION_RATE / 2)  # half of round-trip
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
@@ -1998,7 +1998,7 @@ class BalancedAdaptiveStrategy:
             if position == -1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * (1 - (current['Close'] / entry_price))
-                commission = partial_size * 0.00035
+                commission = partial_size * (COMMISSION_RATE / 2)
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
