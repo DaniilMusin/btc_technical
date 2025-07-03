@@ -6,3 +6,4 @@ SQLAlchemy>=2.0,<3.0
 alembic>=1.13,<2.0
 pytest>=8.2,<9.0
 matplotlib>=3.9,<4.0
+# файл сохранён в кодировке UTF-8
