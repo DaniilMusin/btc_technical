@@ -19,7 +19,6 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, BASE_DIR)
 
 # stub external deps not needed for the test
-sys.modules.setdefault("mexc_sdk", types.ModuleType("mexc_sdk")).WsSpot = object
 sys.modules.setdefault("services.telegram_bot", types.ModuleType("services.telegram_bot")).TgNotifier = DummyTg
 
 trader = importlib.import_module('core.trader')

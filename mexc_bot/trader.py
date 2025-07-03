@@ -17,7 +17,7 @@ class LiveTrader:
         self.testnet = os.getenv("USE_TESTNET", "true").lower() == "true"
 
         # modules
-        self.feed = StreamingDataFeed(self.symbol, self.interval, exchange=self.exchange)
+        self.feed = StreamingDataFeed(self.symbol, self.interval)
         if self.exchange != "BINGX":
             raise NotImplementedError(f"Exchange {self.exchange} is not supported")
         self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
