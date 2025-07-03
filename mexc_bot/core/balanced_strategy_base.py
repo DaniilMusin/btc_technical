@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from telegram_utils import tg_send
 
 # Магические числа
-COMMISSION_RATE = 0.0007  # 0.07% round-trip
+COMMISSION_RATE_ENTRY = 0.00035  # 0.035% комиссия при входе
+COMMISSION_RATE_EXIT = 0.00035   # 0.035% комиссия при выходе
 SLIPPAGE_PCT = 0.05       # 0.05% по умолчанию
 MIN_BALANCE = 1000
 MIN_POSITION = 100
@@ -1888,7 +1889,9 @@ class BalancedAdaptiveStrategy:
                     
                     risk_per_trade = adaptive_risk['LONG']
                     position_size = self.adaptive_position_sizing(balance, risk_per_trade, entry_price, stop_loss_price, optimal_leverage)
-                    
+                    entry_commission = position_size * COMMISSION_RATE_ENTRY
+                    balance -= entry_commission
+
                     max_trade_price = current['High']
                     min_trade_price = current['Low']
                     
@@ -1933,7 +1936,9 @@ class BalancedAdaptiveStrategy:
                     
                     risk_per_trade = adaptive_risk['SHORT']
                     position_size = self.adaptive_position_sizing(balance, risk_per_trade, entry_price, stop_loss_price, optimal_leverage)
-                    
+                    entry_commission = position_size * COMMISSION_RATE_ENTRY
+                    balance -= entry_commission
+
                     max_trade_price = current['High']
                     min_trade_price = current['Low']
                     
@@ -1990,7 +1995,7 @@ class BalancedAdaptiveStrategy:
             if position == 1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * ((current['Close'] / entry_price) - 1)
-                commission = partial_size * (COMMISSION_RATE / 2)  # half of round-trip
+                commission = partial_size * COMMISSION_RATE_EXIT
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
@@ -1998,7 +2003,7 @@ class BalancedAdaptiveStrategy:
             if position == -1 and 'unrealized_pnl_pct' in locals() and unrealized_pnl_pct > 0.12 and position_size > 0:
                 partial_size = position_size * 0.4
                 partial_pnl = partial_size * (1 - (current['Close'] / entry_price))
-                commission = partial_size * (COMMISSION_RATE / 2)
+                commission = partial_size * COMMISSION_RATE_EXIT
                 slippage = partial_size * self.slippage_pct / 100
                 partial_pnl -= (commission + slippage)
                 balance += partial_pnl
@@ -2015,6 +2020,7 @@ class BalancedAdaptiveStrategy:
                 old_value = entry_price * position_size
                 new_value = current['Close'] * additional_size
                 position_size += additional_size
+                balance -= additional_size * COMMISSION_RATE_ENTRY
                 entry_price = (old_value + new_value) / position_size
                 exit_levels = self.calculate_dynamic_exit_levels('LONG', entry_price, current)
                 stop_loss_price = exit_levels['stop_loss']
@@ -2536,7 +2542,7 @@ class BalancedAdaptiveStrategy:
 
     def _close_position(self, position_type, position_size, entry_price, exit_price):
         """Calculate realized PnL with commission and slippage for LONG or SHORT"""
-        commission = position_size * COMMISSION_RATE  # (7) Используем константу
+        commission = position_size * COMMISSION_RATE_EXIT
         slippage = position_size * self.slippage_pct / 100
         if position_type == 'LONG':
             pnl = position_size * ((exit_price / entry_price) - 1) - (commission + slippage)
