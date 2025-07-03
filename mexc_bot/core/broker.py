@@ -2,6 +2,7 @@ import hmac
 import hashlib
 import time
 import os
+import asyncio
 import httpx
 from loguru import logger
 from dotenv import load_dotenv
@@ -60,13 +61,20 @@ class MexcBroker(BaseBroker):
 
     async def _post(self, path: str, params: dict):
         p = params | {"timestamp": int(time.time()*1000)}
-        r = await self._client.post(
-            self.base + path,
-            params=self._sign(p),
-            headers={"X-MEXC-APIKEY": self.key}
-        )
-        r.raise_for_status()
-        return r.json()
+        while True:
+            r = await self._client.post(
+                self.base + path,
+                params=self._sign(p),
+                headers={"X-MEXC-APIKEY": self.key}
+            )
+            try:
+                r.raise_for_status()
+                return r.json()
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 429:
+                    await asyncio.sleep(0.25)
+                    continue
+                raise
 
     # ---------- public ---------- #
     async def place_market(self, symbol: str, side: str, qty: float) -> dict:
@@ -114,13 +122,20 @@ class BingxBroker(BaseBroker):
 
     async def _post(self, path: str, params: dict):
         async with httpx.AsyncClient(timeout=10) as cli:
-            r = await cli.post(
-                f"{self.API_HOST}{path}",
-                headers={"X-BX-APIKEY": os.getenv("BINGX_API_KEY")},
-                params=self._sign(params),
-            )
-            r.raise_for_status()
-            return r.json()
+            while True:
+                r = await cli.post(
+                    f"{self.API_HOST}{path}",
+                    headers={"X-BX-APIKEY": os.getenv("BINGX_API_KEY")},
+                    params=self._sign(params),
+                )
+                try:
+                    r.raise_for_status()
+                    return r.json()
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code == 429:
+                        await asyncio.sleep(0.25)
+                        continue
+                    raise
 
     async def place_market(self, symbol: str, side: str, qty: float):
         if self.testnet:
