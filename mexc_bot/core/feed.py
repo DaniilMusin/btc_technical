@@ -3,9 +3,13 @@ import os
 import json
 import pandas as pd
 from loguru import logger
-from mexc_sdk import WsSpot  # spot. Для фьючей: WsContract
-import websockets
 import asyncio
+import websockets
+
+try:
+    from mexc_sdk import WsSpot  # spot. Для фьючей: WsContract
+except ImportError:  # mexc-sdk may not be installed when using other exchanges
+    WsSpot = None
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,6 +29,10 @@ class StreamingDataFeed:
         self.df = pd.DataFrame()
         self.exchange = os.getenv("EXCHANGE", "MEXC").upper()
         if self.exchange == "MEXC":
+            if WsSpot is None:
+                raise ImportError(
+                    "mexc-sdk is required for MEXC exchange but is not installed"
+                )
             self.ws = WsSpot()
         else:
             self.ws = None
