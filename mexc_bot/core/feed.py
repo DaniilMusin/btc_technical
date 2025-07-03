@@ -70,7 +70,11 @@ class StreamingDataFeed:
         else:
             topic = f"kline_{self.interval}_{self.symbol.lower()}"
             async with websockets.connect("wss://open-api.bingx.com/market") as ws:
-                await ws.send(json.dumps({"type": "subscribe", "topic": topic}))
+                await ws.send(json.dumps({
+                    "event": "subscribe",
+                    "topic": topic,
+                    "params": {"binary": "false"}
+                }))
                 async for raw in ws:
                     msg = json.loads(raw)
                     k = msg.get("data") or msg
