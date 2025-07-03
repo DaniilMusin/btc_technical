@@ -19,7 +19,7 @@ class LiveTrader:
         self.feed     = StreamingDataFeed(self.symbol, self.interval)
         exchange = os.getenv("EXCHANGE", "MEXC").upper()
         if exchange == "BINGX":
-            self.broker = BingxBroker(testnet=self.testnet)
+            self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
         else:
             self.broker = MexcBroker(testnet=self.testnet)
         self.strategy = BalancedAdaptiveStrategyLive(

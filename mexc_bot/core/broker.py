@@ -101,8 +101,33 @@ class BingxBroker(BaseBroker):
         "stopLoss",
     ]
 
-    def __init__(self, testnet: bool = True):
+    def __init__(self, testnet: bool = True, symbol: str | None = None):
         super().__init__(testnet)
+        self.symbol = (symbol or os.getenv("DEFAULT_SYMBOL", "BTCUSDT")).upper()
+        self.qty_precision = 3
+        self.price_precision = 1
+        self._load_precision()
+
+    def _load_precision(self) -> None:
+        """Fetch symbol precision once from BingX."""
+        try:
+            r = httpx.get(f"{self.API_HOST}/openApi/swap/v2/quote/contracts", timeout=10)
+            r.raise_for_status()
+            data = r.json().get("data", [])
+            for item in data:
+                sym = item.get("symbol", "").replace("-", "").upper()
+                if sym == self.symbol.replace("-", ""):
+                    self.qty_precision = int(item.get("quantityPrecision", self.qty_precision))
+                    self.price_precision = int(item.get("pricePrecision", self.price_precision))
+                    break
+        except Exception as exc:
+            logger.warning("Failed to load precision: %s", exc)
+
+    def _round_qty(self, qty: float) -> float:
+        return round(qty, self.qty_precision)
+
+    def _round_price(self, price: float) -> float:
+        return round(price, self.price_precision)
 
     def _sign(self, params: dict) -> dict:
         params |= {"timestamp": int(time.time() * 1000)}
@@ -123,6 +148,7 @@ class BingxBroker(BaseBroker):
             return r.json()
 
     async def place_market(self, symbol: str, side: str, qty: float):
+        qty = self._round_qty(qty)
         if self.testnet:
             self.log_test(symbol, side, qty)
             return {"price": 0.0}
