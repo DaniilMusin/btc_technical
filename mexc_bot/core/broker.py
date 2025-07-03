@@ -140,6 +140,15 @@ class BingxBroker(BaseBroker):
     def _round_price(self, price: float) -> float:
         return round(price, self.price_precision)
 
+    def _prepare_params(self, params: dict) -> dict:
+        data = {k: v for k, v in params.items() if k in self.KEEP}
+        if "quantity" in data:
+            data["quantity"] = self._round_qty(float(data["quantity"]))
+        for key in ("price", "takeProfit", "stopLoss"):
+            if key in data:
+                data[key] = self._round_price(float(data[key]))
+        return data
+
     def _sign(self, params: dict) -> dict:
         params |= {"timestamp": int(time.time() * 1000)}
         qs = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
@@ -165,19 +174,60 @@ class BingxBroker(BaseBroker):
                         continue
                     raise
 
-    async def place_market(self, symbol: str, side: str, qty: float):
-        qty = self._round_qty(qty)
-        if self.testnet:
-            self.log_test(symbol, side, qty)
-            return {"price": 0.0}
-        return await self._post(
-            "/openApi/swap/v2/trade/order",
+    async def place_market(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        take_profit: float | None = None,
+        stop_loss: float | None = None,
+    ):
+        params = self._prepare_params(
             {
                 "symbol": symbol,
                 "side": side,
                 "type": "MARKET",
                 "quantity": qty,
-                "marginMode": self.margin_mode,
-                "leverage": self.leverage,
-            },
+                "takeProfit": take_profit,
+                "stopLoss": stop_loss,
+            }
         )
+        params |= {"marginMode": "isolated", "leverage": 3}
+        if self.testnet:
+            self.log_test(symbol, side, params["quantity"])
+            return {"price": 0.0}
+        return await self._post("/openApi/swap/v2/trade/order", params)
+
+    async def place_limit(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        price: float,
+        take_profit: float | None = None,
+        stop_loss: float | None = None,
+    ):
+        params = self._prepare_params(
+            {
+                "symbol": symbol,
+                "side": side,
+                "type": "LIMIT",
+                "quantity": qty,
+
+                "price": price,
+                "takeProfit": take_profit,
+                "stopLoss": stop_loss,
+            }
+        )
+        
+        params |= {"marginMode": self.margin_mode, "leverage": self.leverage}
+        if self.testnet:
+            logger.info(
+                "[TESTNET] %s LIMIT %s %.6f @ %.2f",
+                symbol,
+                side,
+                params["quantity"],
+                params["price"],
+            )
+            return {"price": params["price"]}
+        return await self._post("/openApi/swap/v2/trade/order", params)
