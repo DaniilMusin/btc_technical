@@ -13,9 +13,10 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-При `USE_TESTNET=true` ордера не отправляются на биржу. Чтобы дополнительно
-сохранять свечи в архив `data/ohlc_archive.csv`, выставьте `ARCHIVE_CSV=true` в
-`.env`.
+При `USE_TESTNET=true` ордера не отправляются на биржу. Для BingX можно также
+задать `BINGX_TESTNET=true` — это внутренний алиас `USE_TESTNET`, включающий
+dry-run режим. Чтобы дополнительно сохранять свечи в архив `data/ohlc_archive.csv`,
+выставьте `ARCHIVE_CSV=true` в `.env`.
 
 ## Tested with Python 3.11 / 3.10
 
