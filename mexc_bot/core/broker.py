@@ -168,11 +168,13 @@ class BingxBroker(BaseBroker):
             self.log_test(symbol, side, qty)
             return {"price": 0.0}
         return await self._post(
-            "/openApi/spot/v1/trade/order",
+            "/openApi/swap/v2/trade/order",
             {
                 "symbol": symbol,
                 "side": side,
                 "type": "MARKET",
                 "quantity": qty,
+                "marginMode": "isolated",
+                "leverage": 3,
             },
         )
