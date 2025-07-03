@@ -7,6 +7,9 @@ import httpx
 from loguru import logger
 from dotenv import load_dotenv
 
+# Default fee rate for a single side of a trade (maker/taker)
+SINGLE_SIDE_FEE = 0.00035
+
 
 load_dotenv()
 

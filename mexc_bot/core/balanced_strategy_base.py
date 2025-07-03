@@ -21,7 +21,7 @@ from .plots import (
     plot_equity_curve as plot_equity_curve_func,
     plot_regime_performance as plot_regime_performance_func,
 )
-from .constants import COMMISSION_RATE_EXIT
+from .broker import SINGLE_SIDE_FEE
 warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)  # (3) Точечная фильтрация
 
 # Магические числа
@@ -1736,7 +1736,7 @@ class BalancedAdaptiveStrategy:
 
         # Entry commission is already deducted when the position is opened,
         # so here we only account for the exit commission and slippage.
-        commission_exit = position_size * exit_price * COMMISSION_RATE_EXIT
+        commission = position_size * exit_price * SINGLE_SIDE_FEE
         slippage = position_size * exit_price * (self.slippage_pct / 100)
 
         if position_type == 'LONG':
@@ -1744,7 +1744,7 @@ class BalancedAdaptiveStrategy:
         else:
             gross_pnl = (entry_price - exit_price) * position_size
 
-        net_pnl = gross_pnl - commission_exit - slippage
+        net_pnl = gross_pnl - commission - slippage
         return net_pnl
 
 
