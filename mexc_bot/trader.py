@@ -80,13 +80,19 @@ class LiveTrader:
                     exit_price = 0.0
             if not exit_price:
                 exit_price = df["Close"].iloc[-1]
-            trade = self.strategy.close_position(
+            closed_trade = self.strategy.close_position(
                 exit_price,
                 ts,
                 reason="SL/TP or signal",
             )
-            if trade is not None:
-                self.balance += trade.pnl
+
+            # Обновляем баланс бота!
+            if closed_trade is not None:
+                self.balance += closed_trade.pnl
+                logger.info(
+                    f"Balance updated: {self.balance:.2f} (PnL: {closed_trade.pnl:.2f})"
+                )
+
             await self.tg.notify(f"✅ *CLOSE* PNL posted")
             return
 

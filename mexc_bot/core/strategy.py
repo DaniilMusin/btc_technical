@@ -102,7 +102,7 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
 
     def close_position(self, exit_price: float, ts: dt.datetime, reason: str):
         if not self.side:
-            return
+            return None  # Возвращаем None, если позиции нет
         pnl = (
             (exit_price - self.entry) * self.qty
             if self.side == "LONG"
