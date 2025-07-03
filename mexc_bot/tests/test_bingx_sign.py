@@ -2,7 +2,10 @@ import importlib.util
 import os
 import pytest
 
-spec = importlib.util.spec_from_file_location('broker', 'core/broker.py')
+from pathlib import Path
+
+BROKER_PATH = Path(__file__).resolve().parents[1] / 'core' / 'broker.py'
+spec = importlib.util.spec_from_file_location('broker', BROKER_PATH)
 broker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(broker)
 

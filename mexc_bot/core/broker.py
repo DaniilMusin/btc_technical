@@ -112,6 +112,8 @@ class BingxBroker(BaseBroker):
     def __init__(self, testnet: bool = True, symbol: str | None = None):
         super().__init__(testnet)
         self.symbol = (symbol or os.getenv("DEFAULT_SYMBOL", "BTCUSDT")).upper()
+        self.margin_mode = os.getenv("BINGX_MARGIN_MODE", "isolated")
+        self.leverage = int(os.getenv("BINGX_LEVERAGE", 3))
         self.qty_precision = 3
         self.price_precision = 1
         self._load_precision()
@@ -174,7 +176,7 @@ class BingxBroker(BaseBroker):
                 "side": side,
                 "type": "MARKET",
                 "quantity": qty,
-                "marginMode": "isolated",
-                "leverage": 3,
+                "marginMode": self.margin_mode,
+                "leverage": self.leverage,
             },
         )
