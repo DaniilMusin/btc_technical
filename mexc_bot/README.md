@@ -36,6 +36,19 @@ pip install -r requirements.txt
 
 Dockerfile и `docker-compose.yml` уже используют образ Python 3.11.
 
+## Local workflow
+
+Для разработки рекомендуется отдельное окружение:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+```
+
+Так можно локально повторить шаги CI.
+
 ## Backtest
 
 Стратегия протестирована на наборе данных `btc_1d_data_2018_to_2025.csv`. Результаты
