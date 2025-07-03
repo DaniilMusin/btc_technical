@@ -109,7 +109,7 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
             else (self.entry - exit_price) * self.qty
         )
 
-        store_trade(
+        trade = store_trade(
             entry_date = self.entry_dt,
             exit_date  = ts,
             position   = self.side,
@@ -121,6 +121,7 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
         )
         logger.success("POS CLOSE %s pnl=%.2f  reason=%s", self.side, pnl, reason)
         self.side = None                         # reset state
+        return trade
 
     # ---------------- динамический размер ---------------- #
     def calc_qty(self, balance: float, price: float, sl: float) -> float:
