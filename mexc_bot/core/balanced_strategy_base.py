@@ -13,6 +13,7 @@ from telegram_utils import tg_send
 
 # Магические числа
 COMMISSION_RATE_ENTRY = 0.00035  # 0.035% комиссия при входе
+# Комиссия при закрытии позиции. Начисляется один раз в \_close_position
 COMMISSION_RATE_EXIT = 0.00035   # 0.035% комиссия при выходе
 SLIPPAGE_PCT = 0.05       # 0.05% по умолчанию
 MIN_BALANCE = 1000
@@ -2543,7 +2544,8 @@ class BalancedAdaptiveStrategy:
     def _close_position(self, position_type, position_size, entry_price, exit_price):
         """Calculate realized PnL with commission and slippage for LONG or SHORT"""
 
-        commission_entry = position_size * entry_price * COMMISSION_RATE_ENTRY
+        # Entry commission is already deducted when the position is opened,
+        # so here we only account for the exit commission and slippage.
         commission_exit = position_size * exit_price * COMMISSION_RATE_EXIT
         slippage = position_size * exit_price * (self.slippage_pct / 100)
 
@@ -2552,7 +2554,7 @@ class BalancedAdaptiveStrategy:
         else:
             gross_pnl = (entry_price - exit_price) * position_size
 
-        net_pnl = gross_pnl - commission_entry - commission_exit - slippage
+        net_pnl = gross_pnl - commission_exit - slippage
         return net_pnl
 
 
