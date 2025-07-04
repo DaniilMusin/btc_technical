@@ -7,7 +7,7 @@
 ## Быстрый старт
 
 ```bash
-cp .env.example .env
+cp .env.example .env  # пример расположен в корне проекта
 # заполните реальные ключи
 
 docker compose up --build -d
