@@ -125,5 +125,15 @@ class LiveTrader:
         finally:
             await self.tg.stop()
 
+    async def run_once(self):
+        """Fetch one batch of candles and process it once."""
+        init_db()
+        await self.tg.start()
+        try:
+            df = await self.feed.fetch_history()
+            await self.on_candle(df)
+        finally:
+            await self.tg.stop()
+
 
 __all__ = ["LiveTrader"]
