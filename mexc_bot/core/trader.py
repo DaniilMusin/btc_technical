@@ -1,8 +1,6 @@
 """Trading helpers used by the CLI entrypoints and tests."""
 
 from __future__ import annotations
-
-import asyncio
 import math
 import os
 from dotenv import load_dotenv
@@ -34,6 +32,12 @@ class LiveTrader:
             initial_balance=float(os.getenv("INITIAL_BALANCE", 1000))
         )
         self.tg = TgNotifier()
+        try:
+            import services.telegram_bot as tgmod
+
+            tgmod.trader = self
+        except Exception:
+            pass
         self.balance = float(os.getenv("INITIAL_BALANCE", 1000))
 
     # ------------------------------------------------ #
@@ -123,4 +127,3 @@ class LiveTrader:
 
 
 __all__ = ["LiveTrader"]
-
