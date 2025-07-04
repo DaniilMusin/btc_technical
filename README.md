@@ -31,6 +31,7 @@ pyenv local 3.11.12
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pip install .[mexc]    # требуется для поддержки MEXC
 ```
 
 Dockerfile и `docker-compose.yml` уже используют образ Python 3.11.
