@@ -3,11 +3,11 @@ SQLite + SQLAlchemy модели и функции.
 Храним только факты сделок – этого достаточно, чтобы стратегия при перезапуске
 понимала свою недавнюю статистику win‑rate / profit‑factor.
 """
+
 import os
+from datetime import datetime
 from dotenv import load_dotenv
-from sqlalchemy import (
-    create_engine, Column, Integer, Float, String, DateTime, func
-)
+from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, func
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
 
 load_dotenv()
@@ -37,6 +37,7 @@ class Trade(Base):
             f"EP={self.entry_price} XP={self.exit_price} PNL={self.pnl:.2f}>"
         )
 
+
 # ------------------ служебные функции ----------------- #
 
 
@@ -53,15 +54,11 @@ def store_trade(**kwargs):
         s.refresh(t)
         return t
 
+
 def last_n_pnl(n: int = 50):
     """Возвращает список pnl последних n сделок."""
     with Session() as s:
-        rows = (
-            s.query(Trade.pnl)
-            .order_by(Trade.id.desc())
-            .limit(n)
-            .all()
-        )
+        rows = s.query(Trade.pnl).order_by(Trade.id.desc()).limit(n).all()
     return [r[0] for r in rows]
 
 
@@ -74,3 +71,17 @@ def stats():
     pnl = pnl or 0
     win_rate = (win / total * 100) if total else 0
     return {"trades": total, "wins": win, "pnl": pnl, "win_rate": win_rate}
+
+
+def get_today_pnl() -> float:
+    """Return sum of PnL for trades closed today (UTC)."""
+    today = datetime.utcnow().date()
+    start = datetime.combine(today, datetime.min.time())
+    end = datetime.combine(today, datetime.max.time())
+    with Session() as s:
+        pnl = (
+            s.query(func.sum(Trade.pnl))
+            .filter(Trade.exit_date >= start, Trade.exit_date <= end)
+            .scalar()
+        )
+    return pnl or 0.0
