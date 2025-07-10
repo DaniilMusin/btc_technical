@@ -136,10 +136,16 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
             risk_pct *= 0.8 if wr < 0.4 else (1.2 if wr > 0.6 else 1.0)
 
         risk_usd = balance * risk_pct
-        if price and price != sl:
+        if price and price != sl and price > 0:
             price_risk_pct = abs(price - sl) / price
         else:
             price_risk_pct = 0.001
+        
+        # Дополнительная проверка на корректность значений
+        if price <= 0 or price_risk_pct <= 0:
+            logger.warning(f"Invalid values: price={price}, price_risk_pct={price_risk_pct}")
+            return 0.0001
+            
         qty = risk_usd / (price * price_risk_pct)
         return max(qty, 0.0001)         # минимальный лот BTC
 

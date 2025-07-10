@@ -25,7 +25,7 @@ from .indicators import (
 )
 try:
     from telegram_utils import tg_send
-except Exception:  # pragma: no cover - optional telegram
+except ImportError:  # pragma: no cover - optional telegram
     tg_send = None
 from .backtest import run_backtest as backtest_run
 from .plots import (
@@ -282,7 +282,9 @@ class BalancedAdaptiveStrategy:
         
         # Add ATR moving average for volatility calculation
         self.data['ATR_MA'] = self.data['ATR'].rolling(20).mean()
-        self.data['ATR_MA'].replace(0, 1e-10, inplace=True)  # (4) Стабильная колонка для деления
+        # Безопасная замена нулевых значений
+        self.data['ATR_MA'] = self.data['ATR_MA'].ffill().fillna(1e-6)
+        self.data['ATR_MA'] = self.data['ATR_MA'].where(self.data['ATR_MA'] > 0, 1e-6)
         
         # --- ADX ---
         adx_period = self.params['adx_period']

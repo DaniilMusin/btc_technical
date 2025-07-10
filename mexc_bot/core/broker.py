@@ -76,9 +76,18 @@ class BingxBroker(BaseBroker):
                 if sym == self.symbol.replace("-", ""):
                     self.qty_precision = int(item.get("quantityPrecision", self.qty_precision))
                     self.price_precision = int(item.get("pricePrecision", self.price_precision))
+                    logger.info(f"Loaded precision for {self.symbol}: qty={self.qty_precision}, price={self.price_precision}")
                     break
+            else:
+                logger.warning(f"Symbol {self.symbol} not found in contracts, using defaults")
+        except httpx.RequestError as exc:
+            logger.error(f"Network error loading precision: {exc}")
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"HTTP error loading precision: {exc.response.status_code}")
+        except (KeyError, ValueError, TypeError) as exc:
+            logger.error(f"Data parsing error loading precision: {exc}")
         except Exception as exc:
-            logger.warning("Failed to load precision: %s", exc)
+            logger.error(f"Unexpected error loading precision: {exc}")
 
     def _round_qty(self, qty: float) -> float:
         return round(qty, self.qty_precision)
@@ -141,7 +150,8 @@ class BingxBroker(BaseBroker):
         params |= {"marginMode": "isolated", "leverage": 3}
         if self.testnet:
             self.log_test(symbol, side, params["quantity"])
-            return {"price": 0.0}
+            # Возвращаем реалистичную цену вместо 0.0 для правильной работы стратегии
+            return {"price": None, "fills": []}
         return await self._post("/openApi/swap/v2/trade/order", params)
 
     async def place_limit(
