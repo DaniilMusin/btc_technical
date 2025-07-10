@@ -19,6 +19,14 @@ class LiveTrader:
     """Simple wrapper that glues together feed, broker and strategy."""
 
     def __init__(self, symbol: str, interval: str, exchange: str = "BINGX"):
+        # Валидация входных параметров
+        if not symbol or not isinstance(symbol, str):
+            raise ValueError("Symbol must be a non-empty string")
+        if not interval or not isinstance(interval, str):
+            raise ValueError("Interval must be a non-empty string")
+        if interval not in ["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"]:
+            logger.warning(f"Interval '{interval}' may not be supported by the exchange")
+            
         self.symbol, self.interval = symbol.upper(), interval
         self.exchange = exchange.upper()
         self.testnet = os.getenv("USE_TESTNET", "true").lower() == "true"
@@ -28,17 +36,29 @@ class LiveTrader:
         if self.exchange != "BINGX":
             raise NotImplementedError(f"Exchange {self.exchange} is not supported")
         self.broker = BingxBroker(testnet=self.testnet, symbol=self.symbol)
+        
+        # Валидация initial_balance
+        try:
+            initial_balance = float(os.getenv("INITIAL_BALANCE", 1000))
+            if initial_balance <= 0:
+                raise ValueError("Initial balance must be positive")
+        except (ValueError, TypeError):
+            logger.error("Invalid INITIAL_BALANCE value, using default 1000")
+            initial_balance = 1000
+            
         self.strategy = BalancedAdaptiveStrategyLive(
-            initial_balance=float(os.getenv("INITIAL_BALANCE", 1000))
+            initial_balance=initial_balance
         )
         self.tg = TgNotifier()
         try:
             import services.telegram_bot as tgmod
 
             tgmod.trader = self
-        except Exception:
-            pass
-        self.balance = float(os.getenv("INITIAL_BALANCE", 1000))
+        except (ImportError, AttributeError) as e:
+            logger.warning(f"Failed to set trader reference: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error setting trader reference: {e}")
+        self.balance = initial_balance
 
     # ------------------------------------------------ #
     async def on_candle(self, df):
