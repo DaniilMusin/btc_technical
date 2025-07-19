@@ -24,8 +24,10 @@ async def test_system():
     
     # Создаем компоненты
     try:
-        broker = BingxBroker(testnet=True)
-        print("✅ Брокер создан успешно")
+        # Use the USE_TESTNET environment variable instead of hardcoding testnet=True
+        use_testnet = os.getenv('USE_TESTNET', 'true').lower() == 'true'
+        broker = BingxBroker(testnet=use_testnet)
+        print(f"✅ Брокер создан успешно (testnet={use_testnet})")
         
         strategy = BalancedAdaptiveStrategyLive()
         print("✅ Стратегия создана успешно")

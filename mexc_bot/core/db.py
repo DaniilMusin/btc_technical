@@ -11,9 +11,10 @@ from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, 
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
 
 load_dotenv()
-DB_PATH = os.getenv("DB_PATH", "trades.db")
+# Use DB_URL for consistent database configuration
+DB_URL = os.getenv("DB_URL", "sqlite:///trades.db")
 
-engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
+engine = create_engine(DB_URL, future=True)
 Session = scoped_session(sessionmaker(bind=engine, expire_on_commit=False))
 Base = declarative_base()
 
