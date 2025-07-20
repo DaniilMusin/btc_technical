@@ -23,12 +23,16 @@ sys.path.insert(0, BASE_DIR)
 
 sys.modules.setdefault("services.telegram_bot", types.ModuleType("services.telegram_bot")).TgNotifier = DummyTg
 
-trader = importlib.import_module("core.trader")
-strategy = importlib.import_module("core.strategy")
-
 
 def test_run_once_records_trade(monkeypatch):
+    monkeypatch.setenv("DB_URL", "sqlite:///:memory:")
     os.environ["USE_TESTNET"] = "true"
+    db = importlib.import_module("core.db")
+    importlib.reload(db)
+    trader = importlib.import_module("core.trader")
+    importlib.reload(trader)
+    strategy = importlib.import_module("core.strategy")
+    importlib.reload(strategy)
     lt = trader.LiveTrader("BTCUSDT", "1m")
 
     times = pd.date_range("2024-01-01", periods=3, freq="1min")
