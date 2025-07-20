@@ -28,20 +28,20 @@ async def test_system():
     try:
         # Use the USE_TESTNET environment variable instead of hardcoding testnet=True
         use_testnet = os.getenv('USE_TESTNET', 'true').lower() == 'true'
-        broker = BingxBroker(testnet=use_testnet)
+        BingxBroker(testnet=use_testnet)
         print(f"✅ Брокер создан успешно (testnet={use_testnet})")
-        
-        strategy = BalancedAdaptiveStrategyLive()
+
+        BalancedAdaptiveStrategyLive()
         print("✅ Стратегия создана успешно")
-        
-        feed = StreamingDataFeed(
+
+        StreamingDataFeed(
             symbol=os.getenv('DEFAULT_SYMBOL', 'BTCUSDT'),
             interval=os.getenv('DEFAULT_INTERVAL', '15m')
         )
         print("✅ Data Feed создан успешно")
-        
-        # Создаем трейдер
-        trader = LiveTrader(
+
+        # Создаем трейдера
+        LiveTrader(
             symbol=os.getenv('DEFAULT_SYMBOL', 'BTCUSDT'),
             interval=os.getenv('DEFAULT_INTERVAL', '15m'),
             exchange=os.getenv('EXCHANGE', 'BINGX')
