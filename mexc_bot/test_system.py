@@ -4,12 +4,14 @@
 """
 import asyncio
 import os
+import pytest
 from dotenv import load_dotenv
 from mexc_bot.core.broker import BingxBroker
 from mexc_bot.core.strategy import BalancedAdaptiveStrategyLive
 from mexc_bot.core.feed import StreamingDataFeed
 from mexc_bot.core.trader import LiveTrader
 
+@pytest.mark.asyncio
 async def test_system():
     """Тестирует основные компоненты системы"""
     print("🔍 Проверка работоспособности MEXC Trading Bot...")
