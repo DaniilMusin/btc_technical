@@ -66,7 +66,8 @@ def test_feed_reconnect(monkeypatch):
     call = {"n": 0}
 
     def dummy_connect(url):
-        idx = call["n"]; call["n"] += 1
+        idx = call["n"]
+        call["n"] += 1
         data = [messages[idx]] if idx < len(messages) else []
         return DummyWS(data)
 

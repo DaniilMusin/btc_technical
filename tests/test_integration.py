@@ -5,7 +5,6 @@ import sys
 import types
 
 import pandas as pd
-import pytest
 
 
 class DummyTg:

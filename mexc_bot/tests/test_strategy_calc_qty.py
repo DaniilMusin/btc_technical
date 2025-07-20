@@ -1,9 +1,13 @@
 import sys
 import os
 import types
+
+import core.strategy as strategy
+=======
 import importlib
 
-# Stub heavy matplotlib modules before importing strategy
+
+# Stub heavy matplotlib modules
 mpl = types.ModuleType("matplotlib")
 mpl.pyplot = types.ModuleType("pyplot")
 mpl.dates = types.ModuleType("dates")
@@ -16,6 +20,9 @@ sys.modules.setdefault("matplotlib.ticker", mpl.ticker)
 
 # Ensure project root is on path so `core` package resolves
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+
+BalancedAdaptiveStrategyLive = strategy.BalancedAdaptiveStrategyLive
 
 
 def test_calc_qty_price_equals_sl(monkeypatch):

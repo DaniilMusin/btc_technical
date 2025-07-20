@@ -1,7 +1,5 @@
 import importlib.util
-import os
 from pathlib import Path
-import pytest
 
 BROKER_PATH = Path(__file__).resolve().parent.parent / "core" / "broker.py"
 spec = importlib.util.spec_from_file_location("broker", str(BROKER_PATH))
