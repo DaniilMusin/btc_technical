@@ -10,7 +10,8 @@ from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from core.db import stats as db_stats, Session, Trade, get_today_pnl
+# Import database helpers from the package to avoid relying on ``PYTHONPATH``
+from mexc_bot.core.db import stats as db_stats, Session, Trade, get_today_pnl
 from datetime import datetime
 
 load_dotenv()

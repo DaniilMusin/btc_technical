@@ -10,7 +10,18 @@ from .feed import StreamingDataFeed
 from .broker import BingxBroker
 from .strategy import BalancedAdaptiveStrategyLive
 from .db import init_db
-from services.telegram_bot import TgNotifier
+# Import notifier from the local services package so tests don't require
+# modifying PYTHONPATH
+try:
+    # Tests stub ``services.telegram_bot`` in ``sys.modules`` so prefer that
+    # when available. Fallback to the package-relative import when running the
+    # application directly.
+    from services.telegram_bot import TgNotifier  # type: ignore
+except Exception:  # pragma: no cover
+    from mexc_bot.services import telegram_bot as tgmod
+    TgNotifier = tgmod.TgNotifier
+    import sys
+    sys.modules.setdefault("services.telegram_bot", tgmod)
 
 load_dotenv()
 
@@ -51,7 +62,7 @@ class LiveTrader:
         )
         self.tg = TgNotifier()
         try:
-            import services.telegram_bot as tgmod
+            from services import telegram_bot as tgmod
 
             tgmod.trader = self
         except (ImportError, AttributeError) as e:
