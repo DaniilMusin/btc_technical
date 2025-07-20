@@ -21,9 +21,6 @@ sys.path.insert(0, BASE_DIR)
 # stub external deps not needed for the test
 sys.modules.setdefault("services.telegram_bot", types.ModuleType("services.telegram_bot")).TgNotifier = DummyTg
 
-trader = importlib.import_module('core.trader')
-strategy = importlib.import_module('core.strategy')
-
 class DummyTrade:
     def __init__(self, pnl):
         self.pnl = pnl
@@ -36,6 +33,13 @@ async def dummy_place_market(symbol, side, qty):
 
 
 def test_balance_updates_on_close(monkeypatch):
+    monkeypatch.setenv("DB_URL", "sqlite:///:memory:")
+    db = importlib.import_module("core.db")
+    importlib.reload(db)
+    trader = importlib.import_module('core.trader')
+    importlib.reload(trader)
+    strategy = importlib.import_module('core.strategy')
+    importlib.reload(strategy)
     lt = trader.LiveTrader('BTCUSDT', '1m')
     assert isinstance(lt.feed, trader.StreamingDataFeed)
     lt.strategy.side = 'LONG'
