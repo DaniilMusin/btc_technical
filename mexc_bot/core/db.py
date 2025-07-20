@@ -9,6 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, func
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
+from sqlalchemy.engine import make_url
 
 load_dotenv()
 # Use DB_URL for consistent database configuration
@@ -43,6 +44,11 @@ class Trade(Base):
 
 
 def init_db():
+    url = make_url(DB_URL)
+    if url.drivername.startswith("sqlite") and url.database and url.database != ":memory:":
+        directory = os.path.dirname(os.path.abspath(url.database))
+        if directory:
+            os.makedirs(directory, exist_ok=True)
     Base.metadata.create_all(engine)
 
 
