@@ -183,7 +183,8 @@ class BalancedAdaptiveStrategy:
             f"SL: `{trade['stop_loss']:.2f}`  TP: `{trade['take_profit']:.2f}`\n"
             f"Вес сигнала: `{trade['weight']:.2f}`  Режим: `{trade['market_regime']}`"
         )
-        tg_send(msg)
+        if callable(tg_send):
+            tg_send(msg)
 
     def _notify_trade_close(self, trade: dict) -> None:
         pnl = trade['pnl']
@@ -193,7 +194,8 @@ class BalancedAdaptiveStrategy:
             f"Выход: `{trade['exit_price']:.2f}`  PnL: `{pnl:.2f}`\n"
             f"Причина: {trade['reason']}"
         )
-        tg_send(msg)
+        if callable(tg_send):
+            tg_send(msg)
     
     def load_data(self) -> Optional[pd.DataFrame]:
         """
@@ -1147,7 +1149,8 @@ class BalancedAdaptiveStrategy:
         
         return {
             'long_weight': long_weight,
-            'short_weight': short_weight
+            'short_weight': short_weight,
+            'market_regime': current.get('Market_Regime', 'unknown')
         }
 
     def calculate_dynamic_exit_levels(self, position_type, entry_price, current_candle, trade_age_hours=0):
@@ -1316,6 +1319,30 @@ class BalancedAdaptiveStrategy:
             return 2 <= ts.hour <= 17
         else:  # Если нет позиции, разрешаем оба диапазона
             return (ts.hour in optimal_hours or (8 <= ts.hour <= 11) or (2 <= ts.hour <= 17))
+    
+    def check_entry_cooldown(self, last_trade_time, current_time) -> bool:
+        """Enforce a minimum number of bars between entries.
+        Returns True if enough bars have passed since the last trade.
+        """
+        try:
+            if last_trade_time is None:
+                return True
+            idx = self.data.index if hasattr(self, 'data') else None
+            if idx is None or len(idx) < 3:
+                bar_seconds = 15 * 60  # fallback to 15m
+            else:
+                diffs = pd.Series(idx).diff().dropna()
+                # Convert to seconds (handles TimedeltaIndex as well)
+                median_delta = pd.to_timedelta(diffs.median())
+                bar_seconds = float(getattr(median_delta, 'total_seconds', lambda: 900)())
+                if bar_seconds <= 0:
+                    bar_seconds = 15 * 60
+            elapsed = (pd.Timestamp(current_time) - pd.Timestamp(last_trade_time)).total_seconds()
+            elapsed_bars = elapsed / max(bar_seconds, 60.0)
+            return elapsed_bars >= self.min_trades_interval
+        except Exception:
+            # Be safe and do not block entries if something goes wrong
+            return True
     
     def calculate_kelly_criterion(self, win_rate, avg_win_pct, avg_loss_pct):
         if avg_loss_pct == 0:
