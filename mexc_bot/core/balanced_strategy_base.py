@@ -13,7 +13,7 @@ from loguru import logger
 
 import os
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 import warnings
 from .indicators import (
@@ -167,7 +167,7 @@ class BalancedAdaptiveStrategy:
             'adx_min_for_long': 22,
         }
         self.data = pd.DataFrame()  # <-- live-режим: пустой DataFrame
-        self.trade_history = []
+        self.trade_history: List[Dict[str, Any]] = []
         self.backtest_results = None
         self.trade_df: Optional[pd.DataFrame] = None
         self.optimized_params: Optional[Dict[str, Any]] = None
@@ -360,7 +360,7 @@ class BalancedAdaptiveStrategy:
         self.data['Strong_Trend'] = (self.data['ADX'] > self.params['adx_strong_trend']) & \
                                     (self.data['Price_Change_Pct'].abs() > threshold)
         self.data['Weak_Trend'] = (self.data['ADX'] < self.params['adx_weak_trend']) & \
-                                  (self.data['Price_Change_Pct'].abs() < threshold/2)
+                                  (self.data['Price_Change_Pct'].abs() < threshold/2)  # type: ignore[operator]
         
         self.data['Bullish_Trend'] = self.data['Strong_Trend'] & (self.data['Price_Change_Pct'] > 0) & \
                                      (self.data['Plus_DI'] > self.data['Minus_DI'])
@@ -368,11 +368,11 @@ class BalancedAdaptiveStrategy:
                                      (self.data['Plus_DI'] < self.data['Minus_DI'])
         
         # Trend weight
-        self.data['Trend_Weight'] = np.minimum(1.0, np.maximum(0, 
-                                              (self.data['ADX'] - self.params['adx_min']) / 
-                                              (self.params['adx_max'] - self.params['adx_min'])))
+        self.data['Trend_Weight'] = np.minimum(1.0, np.maximum(0,
+                                              (self.data['ADX'] - self.params['adx_min']) /
+                                              (self.params['adx_max'] - self.params['adx_min'])))  # type: ignore[operator]
         
-        self.data['Range_Weight'] = 1.0 - self.data['Trend_Weight']
+        self.data['Range_Weight'] = 1.0 - self.data['Trend_Weight']  # type: ignore[operator]
         
         # Time filter
         self.data['Hour'] = self.data.index.hour

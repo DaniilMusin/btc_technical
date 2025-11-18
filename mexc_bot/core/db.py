@@ -21,7 +21,7 @@ Base = declarative_base()
 
 
 # ----------------------- модель ----------------------- #
-class Trade(Base):
+class Trade(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "trades"
     id = Column(Integer, primary_key=True)
     entry_date = Column(DateTime, nullable=False)

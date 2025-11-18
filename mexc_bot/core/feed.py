@@ -5,6 +5,7 @@ import pandas as pd
 from loguru import logger
 import asyncio
 import websockets
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,6 +29,50 @@ class StreamingDataFeed:
                 logger.warning(f"mexc_sdk import failed: {e}. Falling back to BingX")
                 self.exchange = "bingx"
         self.df = pd.DataFrame()
+
+    async def fetch_history(self, limit: int = 500) -> pd.DataFrame:
+        """Fetch historical kline data from BingX API."""
+        url = "https://open-api.bingx.com/openApi/swap/v3/quote/klines"
+        params: dict[str, str | int] = {
+            "symbol": self.symbol,
+            "interval": self.interval,
+            "limit": min(limit, 1440)  # BingX max limit
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+
+                if data.get("code") != 0 or "data" not in data:
+                    logger.error(f"Failed to fetch history: {data}")
+                    return pd.DataFrame()
+
+                klines = data["data"]
+                if not klines:
+                    logger.warning("No historical data returned")
+                    return pd.DataFrame()
+
+                # Parse klines: [timestamp, open, high, low, close, volume, ...]
+                df_data = []
+                for k in klines:
+                    df_data.append({
+                        "Open time": dt.datetime.fromtimestamp(int(k["time"]) / 1000),
+                        "Open": float(k["open"]),
+                        "High": float(k["high"]),
+                        "Low": float(k["low"]),
+                        "Close": float(k["close"]),
+                        "Volume": float(k["volume"])
+                    })
+
+                self.df = pd.DataFrame(df_data).set_index("Open time")
+                logger.info(f"Fetched {len(self.df)} historical candles for {self.symbol}")
+                return self.df.copy()
+
+        except Exception as e:
+            logger.error(f"Error fetching history: {e}")
+            return pd.DataFrame()
 
     async def start(self, on_candle):
         if self.exchange == "mexc":
@@ -80,12 +125,17 @@ class StreamingDataFeed:
                         )
 
                         if ARCHIVE_CSV:
-                            pd.DataFrame([candle]).to_csv(
-                                ARCHIVE_PATH,
-                                index=False,
-                                mode="a",
-                                header=not os.path.exists(ARCHIVE_PATH),
-                            )
+                            try:
+                                # Ensure directory exists
+                                os.makedirs(os.path.dirname(ARCHIVE_PATH) or ".", exist_ok=True)
+                                pd.DataFrame([candle]).to_csv(
+                                    ARCHIVE_PATH,
+                                    index=False,
+                                    mode="a",
+                                    header=not os.path.exists(ARCHIVE_PATH),
+                                )
+                            except Exception as csv_err:
+                                logger.warning(f"Failed to write CSV archive: {csv_err}")
 
                         await on_candle(self.df.copy())
 
