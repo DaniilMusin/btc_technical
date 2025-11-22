@@ -19,7 +19,6 @@ class BaseBroker:
 
     def __init__(self, testnet: bool = True):
         self.testnet = testnet
-        self._client = httpx.AsyncClient(timeout=10.0)
         if testnet:
             logger.warning(
                 "%s Broker in DRY-RUN / TESTNET mode – сделки НЕ отправляются",
@@ -58,7 +57,8 @@ class BingxBroker(BaseBroker):
 
     def __init__(self, testnet: bool = True, symbol: str | None = None):
         super().__init__(testnet)
-        self.symbol = (symbol or os.getenv("DEFAULT_SYMBOL", "BTCUSDT")).upper()
+        default_symbol = symbol or os.getenv("DEFAULT_SYMBOL") or "BTCUSDT"
+        self.symbol = default_symbol.upper()
         self.margin_mode = os.getenv("BINGX_MARGIN_MODE", "isolated")
         self.leverage = int(os.getenv("BINGX_LEVERAGE", 3))
         self.qty_precision = 3
@@ -115,9 +115,10 @@ class BingxBroker(BaseBroker):
     async def _post(self, path: str, params: dict):
         async with httpx.AsyncClient(timeout=10) as cli:
             while True:
+                api_key = os.getenv("BINGX_API_KEY", "")
                 r = await cli.post(
                     f"{self.API_HOST}{path}",
-                    headers={"X-BX-APIKEY": os.getenv("BINGX_API_KEY")},
+                    headers={"X-BX-APIKEY": api_key},
                     params=self._sign(params),
                 )
                 try:

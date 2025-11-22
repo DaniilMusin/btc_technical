@@ -16,10 +16,11 @@ from datetime import datetime
 
 load_dotenv()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-TG_CHAT_ID = os.getenv("TG_CHAT_ID")
-if TG_CHAT_ID is not None:
+TG_CHAT_ID: int | None = None
+_chat_id_str = os.getenv("TG_CHAT_ID")
+if _chat_id_str is not None:
     try:
-        TG_CHAT_ID = int(TG_CHAT_ID)
+        TG_CHAT_ID = int(_chat_id_str)
     except ValueError:
         TG_CHAT_ID = None
 
@@ -52,6 +53,8 @@ class TgNotifier:
 
     # -------------- commands -------------- #
     async def cmd_stats(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        if not upd.effective_chat:
+            return
         s = db_stats()
         text = (
             f"📊 *Общая статистика*\n"
@@ -66,6 +69,8 @@ class TgNotifier:
         )
 
     async def cmd_last(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        if not upd.effective_chat:
+            return
         with Session() as sess:
             t: Trade | None = sess.query(Trade).order_by(Trade.id.desc()).first()
         if not t:
@@ -80,6 +85,8 @@ class TgNotifier:
         await ctx.bot.send_message(upd.effective_chat.id, text)
 
     async def cmd_pnl_today(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        if not upd.effective_chat:
+            return
         pnl = get_today_pnl()
         await ctx.bot.send_message(
             upd.effective_chat.id,
@@ -87,6 +94,8 @@ class TgNotifier:
         )
 
     async def cmd_health(self, upd: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        if not upd.effective_chat:
+            return
         uptime = datetime.now() - bot_start_time
         bal = trader.balance if trader is not None else 0.0
         await ctx.bot.send_message(

@@ -71,8 +71,26 @@ class LiveTrader:
             logger.error(f"Unexpected error setting trader reference: {e}")
         self.balance = initial_balance
 
+    def _extract_fill_price(self, resp: dict, fallback_price: float) -> float:
+        """Extract fill price from broker response with fallback."""
+        fill_price = resp.get("price")
+        if fill_price is None:
+            fills = resp.get("fills")
+            if fills and isinstance(fills, list) and len(fills) > 0:
+                fill_price = float(fills[0].get("price", 0.0))
+            else:
+                fill_price = 0.0
+        if not fill_price:
+            fill_price = fallback_price
+        return fill_price
+
     # ------------------------------------------------ #
     async def on_candle(self, df):
+        # Check if DataFrame is empty
+        if df.empty or len(df) == 0:
+            logger.warning("Received empty DataFrame, skipping candle processing")
+            return
+
         ts = df.index[-1]  # время закрытия текущей свечи
         decision = self.strategy.on_new_candle(df)
 
@@ -90,15 +108,7 @@ class LiveTrader:
 
             side = "BUY" if decision["action"] == "BUY" else "SELL"
             resp = await self.broker.place_market(self.symbol, side, qty)
-            fill_price = resp.get("price")
-            if fill_price is None:
-                fills = resp.get("fills")
-                if fills and isinstance(fills, list) and len(fills) > 0:
-                    fill_price = float(fills[0].get("price", 0.0))
-                else:
-                    fill_price = 0.0
-            if not fill_price:
-                fill_price = df["Close"].iloc[-1]
+            fill_price = self._extract_fill_price(resp, df["Close"].iloc[-1])
 
             self.strategy.open_position(
                 "LONG" if side == "BUY" else "SHORT",
@@ -122,15 +132,7 @@ class LiveTrader:
                 close_side,
                 self.strategy.qty,
             )
-            exit_price = resp.get("price")
-            if exit_price is None:
-                fills = resp.get("fills")
-                if fills and isinstance(fills, list) and len(fills) > 0:
-                    exit_price = float(fills[0].get("price", 0.0))
-                else:
-                    exit_price = 0.0
-            if not exit_price:
-                exit_price = df["Close"].iloc[-1]
+            exit_price = self._extract_fill_price(resp, df["Close"].iloc[-1])
             closed_trade = self.strategy.close_position(
                 exit_price,
                 ts,

@@ -135,17 +135,27 @@ class BalancedAdaptiveStrategyLive(BalancedAdaptiveStrategy):
             wr = sum(p>0 for p in pnl_list) / len(pnl_list)
             risk_pct *= 0.8 if wr < 0.4 else (1.2 if wr > 0.6 else 1.0)
 
-        risk_usd = balance * risk_pct
-        if price and price != sl and price > 0:
-            price_risk_pct = abs(price - sl) / price
-        else:
-            price_risk_pct = 0.001
-        
-        # Дополнительная проверка на корректность значений
-        if price <= 0 or price_risk_pct <= 0:
-            logger.warning(f"Invalid values: price={price}, price_risk_pct={price_risk_pct}")
+        # Validate inputs
+        if not price or price <= 0:
+            logger.warning(f"Invalid price: {price}")
             return 0.0001
-            
+
+        if not sl or sl <= 0:
+            logger.warning(f"Invalid stop loss: {sl}")
+            return 0.0001
+
+        if price == sl:
+            logger.warning(f"Price equals stop loss: {price}")
+            return 0.0001
+
+        risk_usd = balance * risk_pct
+        price_risk_pct = abs(price - sl) / price
+
+        # Additional check for valid price risk percentage
+        if price_risk_pct <= 0 or price_risk_pct > 1.0:
+            logger.warning(f"Invalid price_risk_pct: {price_risk_pct} (price={price}, sl={sl})")
+            return 0.0001
+
         qty = risk_usd / (price * price_risk_pct)
         return max(qty, 0.0001)         # минимальный лот BTC
 
